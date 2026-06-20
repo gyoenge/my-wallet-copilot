@@ -79,19 +79,22 @@ function Bars({
 }) {
   const max = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="flex items-end gap-2.5" style={{ height }}>
+    <div className="flex items-stretch gap-2.5" style={{ height }}>
       {data.map((d, i) => (
-        <div key={d.label} className="flex flex-1 flex-col items-center gap-2">
-          <div
-            className="w-full rounded-t-[5px]"
-            style={{
-              height: `${Math.max((d.value / max) * 100, 3)}%`,
-              background: `linear-gradient(${gradient[0]}, ${gradient[1]})`,
-              transformOrigin: "bottom",
-              animation: `wcRise 0.55s ${i * 0.05}s ease both`,
-            }}
-            title={`${d.label}: ${won(d.value)}원`}
-          />
+        <div key={d.label} className="flex h-full flex-1 flex-col items-center gap-2">
+          {/* flex-1 막대 영역이 확정 높이를 가져 막대의 %가 정상 계산된다. */}
+          <div className="flex w-full flex-1 items-end">
+            <div
+              className="w-full rounded-t-[5px]"
+              style={{
+                height: `${Math.max((d.value / max) * 100, 2)}%`,
+                background: `linear-gradient(${gradient[0]}, ${gradient[1]})`,
+                transformOrigin: "bottom",
+                animation: `wcRise 0.55s ${i * 0.05}s ease both`,
+              }}
+              title={`${d.label}: ${won(d.value)}원`}
+            />
+          </div>
           <span className="text-[11px] text-[#8b93ad]">{d.label}</span>
         </div>
       ))}

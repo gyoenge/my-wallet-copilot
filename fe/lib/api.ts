@@ -66,14 +66,15 @@ export async function streamChat(
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
 
-      // SSE 이벤트는 빈 줄(\n\n)로 구분된다.
-      const events = buffer.split("\n\n");
+      // SSE 이벤트는 빈 줄로 구분된다. sse-starlette는 CRLF(\r\n)를 쓰므로
+      // \r\n / \n 양쪽을 모두 처리한다.
+      const events = buffer.split(/\r?\n\r?\n/);
       buffer = events.pop() ?? "";
 
       for (const evt of events) {
         let eventType = "message";
         const dataLines: string[] = [];
-        for (const line of evt.split("\n")) {
+        for (const line of evt.split(/\r?\n/)) {
           if (line.startsWith("event:")) eventType = line.slice(6).trim();
           // 한 이벤트의 여러 data: 줄은 줄바꿈으로 복원해야 마크다운 표/줄바꿈이 유지된다.
           else if (line.startsWith("data:")) dataLines.push(line.slice(5).replace(/^ /, ""));
