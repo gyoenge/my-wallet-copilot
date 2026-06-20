@@ -221,6 +221,9 @@ __marimo__/
 
 # Data
 data/ 
+assets/.legacy/
+reference/ 
 
 # claude 
 .claude 
+
