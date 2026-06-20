@@ -158,7 +158,7 @@ def _llm_categorize(merchants: list[str], model: str | None = None) -> dict[str,
 
 
 if __name__ == "__main__":
-    from core.data_loader import load_transactions
+    from ai.data_loader import load_transactions
 
     _df = categorize(load_transactions(), use_llm=False)
     summary = (

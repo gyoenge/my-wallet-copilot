@@ -1,6 +1,6 @@
 """My Wallet Copilot — FastAPI 백엔드.
 
-기존 core/(데이터 로드·분류·분석·LangGraph 에이전트)를 그대로 재사용해
+기존 ai/(데이터 로드·분류·분석·LangGraph 에이전트)를 그대로 재사용해
 프론트엔드(Next.js)에 REST + SSE API로 노출한다.
 
 실행:  uvicorn be.main:app --reload --port 8000
@@ -21,9 +21,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from core import analysis as A
-from core.categorize import categorize
-from core.data_loader import load_transactions
+from ai import analysis as A
+from ai.categorize import categorize
+from ai.data_loader import load_transactions
 
 load_dotenv()
 
@@ -139,7 +139,7 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY가 설정되지 않았습니다.")
 
     if session["agent"] is None:
-        from core.agent import build_agent
+        from ai.agent import build_agent
 
         session["agent"] = build_agent(session["df"])
     agent = session["agent"]

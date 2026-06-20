@@ -15,7 +15,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
-from core import analysis as A
+from ai import analysis as A
 
 DEFAULT_MODEL = "claude-opus-4-8"
 
@@ -152,8 +152,8 @@ def ask(df: pd.DataFrame, question: str, model: str | None = None) -> str:
 if __name__ == "__main__":
     import sys
 
-    from core.categorize import categorize
-    from core.data_loader import load_transactions
+    from ai.categorize import categorize
+    from ai.data_loader import load_transactions
 
     _df = categorize(load_transactions(), use_llm=False)
     q = sys.argv[1] if len(sys.argv) > 1 else "내가 가장 돈을 많이 쓰는 요일은?"
