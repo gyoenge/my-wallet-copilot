@@ -14,6 +14,11 @@ export default function Welcome({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [panel, setPanel] = useState<null | "help" | "explore">(null);
+  // 닫히는 동안에도 내용이 유지되도록 마지막으로 연 패널을 기억한다.
+  const lastView = useRef<"help" | "explore">("help");
+  if (panel) lastView.current = panel;
+  const view = panel ?? lastView.current;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -24,20 +29,26 @@ export default function Welcome({
           <img src="/savy_logo.png" alt="SAVY: My Wallet Copilot" className="h-[46px] w-auto" />
         </Link>
         <nav className="flex items-center gap-2.5">
-          <button className="rounded-[12px] px-[18px] py-3 text-[16px] font-medium text-[#4b5263] transition hover:bg-[#eef0f5]">
+          <button
+            onClick={() => setPanel("help")}
+            className="rounded-[12px] px-[18px] py-3 text-[16px] font-medium text-[#4b5263] transition hover:bg-[#eef0f5]"
+          >
             도움말
           </button>
           <button
-            onClick={() => onStart(null)}
-            disabled={loading}
-            className="rounded-[12px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] px-[22px] py-3 text-[16px] font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            onClick={() => setPanel("explore")}
+            className="rounded-[12px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] px-[22px] py-3 text-[16px] font-semibold text-white transition hover:opacity-90"
           >
             둘러보기
           </button>
         </nav>
       </header>
 
-      <div className="flex flex-1 items-center justify-center px-8 pb-[16vh]">
+      <div className="relative flex flex-1 overflow-hidden">
+        <div
+          className="flex flex-1 items-center justify-center px-8 pb-[16vh] transition-[margin] duration-300 ease-out"
+          style={{ marginRight: panel ? 450 : 0 }}
+        >
         <div
           className="flex w-full max-w-[1080px] flex-col items-center gap-12 md:flex-row md:items-start md:gap-[60px]"
           style={{ animation: "wcFade 0.6s ease both" }}
@@ -141,6 +152,75 @@ export default function Welcome({
           </p>
         </div>
       </div>
+      </div>
+
+        {/* 우측 사이드바 — 세로 전체 높이, 오른쪽에서 슬라이드 인 */}
+        <aside
+          className="absolute top-0 flex h-full w-[450px] max-w-[90vw] flex-col overflow-y-auto border-l border-[#ebedf3] bg-white p-7 shadow-[-8px_0_40px_rgba(20,20,50,0.10)]"
+          style={{
+            right: panel ? 0 : -480,
+            opacity: panel ? 1 : 0,
+            transition: "right 0.3s ease, opacity 0.3s ease",
+          }}
+        >
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-[20px] font-extrabold text-[#1c1f2b]">
+                {view === "help" ? "도움말" : "둘러보기"}
+              </h2>
+              <button
+                onClick={() => setPanel(null)}
+                aria-label="닫기"
+                className="rounded-[10px] px-2.5 py-1.5 text-[18px] text-[#8a92a6] transition hover:bg-[#eef0f5]"
+              >
+                ✕
+              </button>
+            </div>
+
+            {view === "help" ? (
+              <div className="flex flex-col gap-5 text-[14.5px] leading-[1.7] text-[#3c4252]">
+                <section>
+                  <h3 className="mb-1.5 text-[15px] font-bold text-[#1c1f2b]">시작하기</h3>
+                  <p className="m-0">
+                    카드 내역 파일(CSV·엑셀)을 올린 뒤 <b>분석하기</b>를 누르면 대시보드가 열려요.
+                    파일이 없다면 <b>둘러보기</b>에서 샘플로 체험할 수 있어요.
+                  </p>
+                </section>
+                <section>
+                  <h3 className="mb-1.5 text-[15px] font-bold text-[#1c1f2b]">무엇을 해주나요</h3>
+                  <p className="m-0">
+                    카테고리·요일·시간대별 지출을 시각화하고, 소비 건강 점수와 절약 포인트를 알려줘요.
+                    세이비에게 자연어로 질문하면 실제 숫자로 답해줘요.
+                  </p>
+                </section>
+                <section>
+                  <h3 className="mb-1.5 text-[15px] font-bold text-[#1c1f2b]">개인정보</h3>
+                  <p className="m-0">업로드한 내역은 분석에만 쓰이고 저장되지 않아요.</p>
+                </section>
+              </div>
+            ) : (
+              <div className="flex flex-1 flex-col gap-5 text-[14.5px] leading-[1.7] text-[#3c4252]">
+                <p className="m-0">
+                  파일이 없어도 괜찮아요. 샘플 카드 내역으로 세이비의 분석 대시보드와 채팅을 바로 체험해볼 수 있어요.
+                </p>
+                <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                  <li className="flex gap-2"><span className="text-[#7c5cf6]">•</span><span>카테고리·월·요일·시간대 지출 차트</span></li>
+                  <li className="flex gap-2"><span className="text-[#7c5cf6]">•</span><span>소비 건강 점수와 한 줄 진단</span></li>
+                  <li className="flex gap-2"><span className="text-[#7c5cf6]">•</span><span>세이비와 자연어 채팅</span></li>
+                </ul>
+                <button
+                  onClick={() => {
+                    setPanel(null);
+                    onStart(null);
+                  }}
+                  disabled={loading}
+                  className="wc-primary mt-1 w-full rounded-[14px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-[15px] text-[15px] font-bold text-white disabled:opacity-60"
+                  style={{ boxShadow: "0 10px 26px rgba(124,92,246,0.3)" }}
+                >
+                  {loading ? "세이비가 내역 분석하는 중..." : "샘플로 둘러보기"}
+                </button>
+              </div>
+            )}
+        </aside>
       </div>
     </div>
   );

@@ -44,6 +44,14 @@ body {
   from { opacity: 0; transform: translateX(-10px) scale(0.96); }
   to { opacity: 1; transform: translateX(0) scale(1); }
 }
+@keyframes wcSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes wcBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: rgba(20, 20, 50, 0.14); border-radius: 4px; }
