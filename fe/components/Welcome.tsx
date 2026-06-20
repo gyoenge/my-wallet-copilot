@@ -14,13 +14,33 @@ export default function Welcome({
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-8 py-12">
-      <div
-        className="flex w-full max-w-[1080px] flex-col items-center gap-12 md:flex-row md:gap-[60px]"
-        style={{ animation: "wcFade 0.6s ease both" }}
-      >
+    <div className="flex min-h-screen flex-col">
+      {/* 슬림 상단 바: 좌 브랜드 / 우 도움말·로그인 */}
+      <header className="flex items-center justify-between px-6 py-4 md:px-8">
+        <div className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/savy_character.png" alt="" className="h-8 w-8 rounded-full object-cover" />
+          <span className="text-[15px] font-extrabold tracking-tight text-[#1c1f2b]">
+            My Wallet Copilot
+          </span>
+        </div>
+        <nav className="flex items-center gap-1.5">
+          <button className="rounded-[10px] px-3.5 py-2 text-[14px] font-medium text-[#4b5263] transition hover:bg-[#eef0f5]">
+            도움말
+          </button>
+          <button className="rounded-[10px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] px-4 py-2 text-[14px] font-semibold text-white transition hover:opacity-90">
+            로그인
+          </button>
+        </nav>
+      </header>
+
+      <div className="flex flex-1 items-center justify-center px-8 pb-12">
+        <div
+          className="flex w-full max-w-[1080px] flex-col items-center gap-12 md:flex-row md:items-start md:gap-[60px]"
+          style={{ animation: "wcFade 0.6s ease both" }}
+        >
         {/* 좌: 대형 캐릭터 */}
-        <div className="flex flex-none flex-col items-center gap-5">
+        <div className="flex flex-none flex-col items-center">
           <div className="relative" style={{ animation: "wcFloat 5s ease-in-out infinite" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -29,13 +49,10 @@ export default function Welcome({
               className="relative h-[300px] w-[300px] rounded-full object-cover"
             />
           </div>
-          <div className="text-[13px] font-bold uppercase tracking-[0.16em] text-[#7c5cf6]">
-            My Wallet Copilot
-          </div>
         </div>
 
-        {/* 우: 말풍선 + 업로드 */}
-        <div className="flex w-full min-w-0 max-w-[540px] flex-col gap-[22px]">
+        {/* 우: 말풍선 + 업로드 (말풍선 꼬리를 캐릭터 입/중심 높이에 맞추려 데스크톱에서 아래로 내림) */}
+        <div className="flex w-full min-w-0 max-w-[540px] flex-col gap-[22px] md:mt-[90px]">
           {/* 말풍선 */}
           <div
             className="relative self-start rounded-[22px] border border-[#ebe7fb] bg-white px-7 py-6"
@@ -118,6 +135,7 @@ export default function Welcome({
             업로드한 내역은 분석에만 쓰이고 저장되지 않아.
           </p>
         </div>
+      </div>
       </div>
     </div>
   );
