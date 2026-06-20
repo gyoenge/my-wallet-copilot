@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 
 export default function Welcome({
   onStart,
@@ -16,25 +17,22 @@ export default function Welcome({
   return (
     <div className="flex min-h-screen flex-col">
       {/* 슬림 상단 바: 좌 브랜드 / 우 도움말·로그인 */}
-      <header className="flex items-center justify-between px-6 py-4 md:px-8">
-        <div className="flex items-center gap-2.5">
+      <header className="flex items-center justify-between px-6 py-6 md:px-10">
+        <Link href="/" aria-label="홈으로" className="flex items-center transition hover:opacity-80">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/savy_character.png" alt="" className="h-8 w-8 rounded-full object-cover" />
-          <span className="text-[15px] font-extrabold tracking-tight text-[#1c1f2b]">
-            My Wallet Copilot
-          </span>
-        </div>
-        <nav className="flex items-center gap-1.5">
-          <button className="rounded-[10px] px-3.5 py-2 text-[14px] font-medium text-[#4b5263] transition hover:bg-[#eef0f5]">
+          <img src="/savy_logo.png" alt="SAVY: My Wallet Copilot" className="h-[46px] w-auto" />
+        </Link>
+        <nav className="flex items-center gap-2.5">
+          <button className="rounded-[12px] px-[18px] py-3 text-[16px] font-medium text-[#4b5263] transition hover:bg-[#eef0f5]">
             도움말
           </button>
-          <button className="rounded-[10px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] px-4 py-2 text-[14px] font-semibold text-white transition hover:opacity-90">
+          <button className="rounded-[12px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] px-[22px] py-3 text-[16px] font-semibold text-white transition hover:opacity-90">
             로그인
           </button>
         </nav>
       </header>
 
-      <div className="flex flex-1 items-center justify-center px-8 pb-12">
+      <div className="flex flex-1 items-center justify-center px-8 pb-[16vh]">
         <div
           className="flex w-full max-w-[1080px] flex-col items-center gap-12 md:flex-row md:items-start md:gap-[60px]"
           style={{ animation: "wcFade 0.6s ease both" }}
@@ -46,16 +44,16 @@ export default function Welcome({
             <img
               src="/savy_character.png"
               alt="세이비"
-              className="relative h-[300px] w-[300px] rounded-full object-cover"
+              className="relative h-[340px] w-[340px] rounded-full object-cover"
             />
           </div>
         </div>
 
         {/* 우: 말풍선 + 업로드 (말풍선 꼬리를 캐릭터 입/중심 높이에 맞추려 데스크톱에서 아래로 내림) */}
-        <div className="flex w-full min-w-0 max-w-[540px] flex-col gap-[22px] md:mt-[90px]">
+        <div className="flex w-full min-w-0 max-w-[600px] flex-col gap-[24px] md:mt-[104px]">
           {/* 말풍선 */}
           <div
-            className="relative self-start rounded-[22px] border border-[#ebe7fb] bg-white px-7 py-6"
+            className="relative self-start rounded-[24px] border border-[#ebe7fb] bg-white px-8 py-7"
             style={{
               borderBottomLeftRadius: 6,
               boxShadow: "0 16px 38px rgba(80,70,160,0.12)",
@@ -63,18 +61,18 @@ export default function Welcome({
             }}
           >
             <div
-              className="absolute h-[17px] w-[17px] rotate-45 bg-white"
+              className="absolute h-[19px] w-[19px] rotate-45 bg-white"
               style={{
-                left: -8,
-                top: 30,
+                left: -9,
+                top: 34,
                 borderLeft: "1px solid #ebe7fb",
                 borderBottom: "1px solid #ebe7fb",
               }}
             />
-            <h1 className="m-0 mb-2.5 text-[28px] font-extrabold leading-[1.3] text-[#1c1f2b]">
+            <h1 className="m-0 mb-3 text-[32px] font-extrabold leading-[1.3] text-[#1c1f2b]">
               안녕, 나는 <span className="text-[#7c5cf6]">세이비</span>야
             </h1>
-            <p className="m-0 text-[15.5px] leading-[1.7] text-[#6b7280]">
+            <p className="m-0 text-[17px] leading-[1.7] text-[#6b7280]">
               새는 돈을 찾아주는 지갑 수호자.
               <br />
               카드 내역만 올리면 소비 습관을 분석해줄게.
@@ -96,22 +94,22 @@ export default function Welcome({
               e.preventDefault();
               if (!loading) onStart(e.dataTransfer.files?.[0] ?? null);
             }}
-            className="wc-drop cursor-pointer rounded-[20px] border-[1.5px] border-dashed border-[rgba(124,92,246,0.45)] bg-[#faf9ff] px-[26px] py-[34px] text-center"
+            className="wc-drop cursor-pointer rounded-[22px] border-[1.5px] border-dashed border-[rgba(124,92,246,0.45)] bg-[#faf9ff] px-[30px] py-[40px] text-center"
           >
-            <div className="mx-auto mb-3.5 flex h-[52px] w-[52px] items-center justify-center rounded-[15px] bg-[#efeaff]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="mx-auto mb-4 flex h-[60px] w-[60px] items-center justify-center rounded-[17px] bg-[#efeaff]">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 16V4M12 4l-5 5M12 4l5 5" />
                 <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
               </svg>
             </div>
-            <div className="mb-1.5 text-[15.5px] font-bold text-[#1c1f2b]">카드 내역 파일을 올려줘</div>
-            <div className="text-[13px] text-[#9aa1b2]">CSV · 엑셀 파일을 끌어다 놓거나 클릭해서 선택</div>
+            <div className="mb-1.5 text-[17.5px] font-bold text-[#1c1f2b]">카드 내역 파일을 올려줘</div>
+            <div className="text-[14px] text-[#9aa1b2]">CSV · 엑셀 파일을 끌어다 놓거나 클릭해서 선택</div>
           </div>
 
           {/* 구분선 */}
           <div className="flex items-center gap-3.5">
             <div className="h-px flex-1 bg-[#e6e8ef]" />
-            <div className="text-xs text-[#aab0c0]">또는</div>
+            <div className="text-[13px] text-[#aab0c0]">또는</div>
             <div className="h-px flex-1 bg-[#e6e8ef]" />
           </div>
 
@@ -119,19 +117,19 @@ export default function Welcome({
           <button
             onClick={() => onStart(null)}
             disabled={loading}
-            className="wc-primary w-full rounded-[15px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-[15px] text-[15px] font-bold text-white disabled:opacity-60"
+            className="wc-primary w-full rounded-[16px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-[18px] text-[16.5px] font-bold text-white disabled:opacity-60"
             style={{ boxShadow: "0 10px 26px rgba(124,92,246,0.3)" }}
           >
             {loading ? "세이비가 내역 분석하는 중..." : "샘플 데이터로 바로 둘러보기"}
           </button>
 
           {error && (
-            <p className="m-0 text-[13px] text-rose-500">
+            <p className="m-0 text-[14px] text-rose-500">
               {error} — FastAPI 백엔드(127.0.0.1:8000)가 실행 중인지 확인하세요.
             </p>
           )}
 
-          <p className="m-0 -mt-1.5 text-xs text-[#aab0c0]">
+          <p className="m-0 -mt-1.5 text-[13px] text-[#aab0c0]">
             업로드한 내역은 분석에만 쓰이고 저장되지 않아.
           </p>
         </div>
