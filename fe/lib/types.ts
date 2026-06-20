@@ -21,27 +21,23 @@ export interface MonthlyRow {
   건수: number;
   "전월대비금액": number | null;
   "전월대비%": number | null;
+  partial: boolean;
 }
 
-export interface WeekdayRow {
-  요일: string;
-  합계: number;
-  건수: number;
-  건당평균: number;
-}
-
-export interface TimeBucketRow {
-  시간대: string;
-  합계: number;
-  건수: number;
-}
-
-export interface MerchantRow {
-  가맹점: string;
-  카테고리: string;
-  합계: number;
-  건수: number;
-}
+// 데이터에 따라 동적으로 추가되는 분석 카드.
+export type DashCard =
+  | {
+      kind: "bars";
+      title: string;
+      gradient: [string, string];
+      bars: { label: string; value: number }[];
+    }
+  | {
+      kind: "list";
+      title: string;
+      items: { name: string; sub: string; value: string }[];
+    }
+  | { kind: "savings"; title: string; text: string };
 
 export interface Dashboard {
   summary: Summary;
@@ -49,10 +45,7 @@ export interface Dashboard {
   insights: string[];
   categories: CategoryRow[];
   monthly: MonthlyRow[];
-  weekday: WeekdayRow[];
-  timeBucket: TimeBucketRow[];
-  topMerchants: MerchantRow[];
-  recentChange: { category: string; 이전달: number; 최근달: number; 증감액: number }[];
+  cards: DashCard[];
 }
 
 export interface ChatMessage {

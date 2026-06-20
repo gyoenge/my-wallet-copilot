@@ -39,11 +39,23 @@ def category_breakdown(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def monthly_trend(df: pd.DataFrame) -> pd.DataFrame:
-    """월별 총지출과 전월 대비 증감(금액/%)을 돌려준다."""
+    """월별 총지출과 전월 대비 증감(금액/%)을 돌려준다.
+
+    데이터가 월 중간에 시작/종료해 해당 월이 일부만 포함되는 경우
+    'partial' 플래그를 True로 표시한다(차트에서 별도 표식용).
+    """
     g = df.groupby("year_month")["amount"].agg(합계="sum", 건수="count").reset_index()
     g = g.sort_values("year_month").reset_index(drop=True)
     g["전월대비금액"] = g["합계"].diff()
     g["전월대비%"] = (g["합계"].pct_change() * 100).round(1)
+
+    # 첫 달이 1일에 시작하지 않거나, 마지막 달이 말일에 끝나지 않으면 '부분 월'.
+    start, end = df["date"].min(), df["date"].max()
+    g["partial"] = False
+    if not start.is_month_start:
+        g.loc[g["year_month"] == start.strftime("%Y-%m"), "partial"] = True
+    if not end.is_month_end:
+        g.loc[g["year_month"] == end.strftime("%Y-%m"), "partial"] = True
     return g
 
 

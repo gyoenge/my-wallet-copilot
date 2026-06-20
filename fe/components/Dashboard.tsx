@@ -54,7 +54,7 @@ function Donut({ cats }: { cats: DashboardData["categories"] }) {
       </div>
       <div className="grid flex-1 grid-cols-2 gap-x-3.5 gap-y-[7px] text-[12.5px]">
         {cats.map((c, i) => (
-          <div key={c.category} className="flex items-center gap-[7px]">
+          <div key={c.category} className="group relative flex items-center gap-[7px]">
             <span
               className="h-[9px] w-[9px] flex-none rounded-[3px]"
               style={{ background: PALETTE[i % PALETTE.length] }}
@@ -62,10 +62,50 @@ function Donut({ cats }: { cats: DashboardData["categories"] }) {
             <span className="text-[#4b5263]">
               {c.category} {c.비중}%
             </span>
+            {/* 호버 금액 툴팁 */}
+            <div className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 whitespace-nowrap rounded-lg bg-[#1c1f2b] px-2.5 py-1.5 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+              {won(c.합계)}원
+            </div>
           </div>
         ))}
       </div>
     </div>
+  );
+}
+
+/** 데이터에 따라 추가되는 동적 분석 카드 */
+function DynamicCard({ card }: { card: DashboardData["cards"][number] }) {
+  if (card.kind === "bars") {
+    return (
+      <Panel title={card.title}>
+        <Bars data={card.bars} gradient={card.gradient} />
+      </Panel>
+    );
+  }
+  if (card.kind === "list") {
+    return (
+      <Panel title={card.title}>
+        <div className="divide-y divide-[#f0f1f5]">
+          {card.items.map((it, i) => (
+            <div key={i} className="flex items-center justify-between py-2.5">
+              <div className="min-w-0">
+                <div className="truncate text-[14px] font-semibold text-[#1c1f2b]">{it.name}</div>
+                <div className="text-[12px] text-[#9aa1b2]">{it.sub}</div>
+              </div>
+              <div className="ml-3 flex-none text-[14px] font-bold text-[#3c4252]">{it.value}</div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    );
+  }
+  return (
+    <Panel title={card.title}>
+      <div className="flex items-start gap-3">
+        <span className="text-[20px]">💡</span>
+        <p className="m-0 text-[14.5px] leading-[1.6] text-[#3c4252]">{card.text}</p>
+      </div>
+    </Panel>
   );
 }
 
@@ -75,32 +115,55 @@ function Bars({
   gradient,
   height = 168,
 }: {
-  data: { label: string; value: number }[];
+  data: { label: string; value: number; partial?: boolean }[];
   gradient: [string, string];
   height?: number;
 }) {
   const max = Math.max(...data.map((d) => d.value), 1);
+  const hasPartial = data.some((d) => d.partial);
+  const solid = `linear-gradient(${gradient[0]}, ${gradient[1]})`;
+  // 부분 월: 빗금 패턴을 덧씌워 '기간이 온전치 않음'을 시각적으로 표시.
+  const hatch = `repeating-linear-gradient(45deg, rgba(255,255,255,0.55) 0 5px, rgba(255,255,255,0) 5px 10px), ${solid}`;
+
   return (
-    <div className="flex items-stretch gap-2.5" style={{ height }}>
-      {data.map((d, i) => (
-        <div key={d.label} className="flex h-full flex-1 flex-col items-center gap-2">
-          {/* flex-1 막대 영역이 확정 높이를 가져 막대의 %가 정상 계산된다. */}
-          <div className="flex w-full flex-1 items-end">
-            <div
-              className="w-full rounded-t-[5px]"
-              style={{
-                height: `${Math.max((d.value / max) * 100, 2)}%`,
-                background: `linear-gradient(${gradient[0]}, ${gradient[1]})`,
-                transformOrigin: "bottom",
-                animation: `wcRise 0.55s ${i * 0.05}s ease both`,
-              }}
-              title={`${d.label}: ${won(d.value)}원`}
-            />
-          </div>
-          <span className="text-[11px] text-[#99a0b0]">{d.label}</span>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="flex items-stretch gap-2.5" style={{ height }}>
+        {data.map((d, i) => {
+          const h = Math.max((d.value / max) * 100, 2);
+          return (
+            <div key={d.label} className="group flex h-full flex-1 flex-col items-center gap-2">
+              {/* flex-1 막대 영역이 확정 높이를 가져 막대의 %가 정상 계산된다. */}
+              <div className="relative flex w-full flex-1 items-end">
+                <div
+                  className="w-full rounded-t-[5px]"
+                  style={{
+                    height: `${h}%`,
+                    background: d.partial ? hatch : solid,
+                    border: d.partial ? "1px dashed rgba(124,92,246,0.6)" : undefined,
+                    transformOrigin: "bottom",
+                    animation: `wcRise 0.55s ${i * 0.05}s ease both`,
+                  }}
+                />
+                {/* 호버 금액 툴팁 */}
+                <div
+                  className="pointer-events-none absolute left-1/2 z-10 whitespace-nowrap rounded-lg bg-[#1c1f2b] px-2.5 py-1.5 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100"
+                  style={{ bottom: `${h}%`, transform: "translate(-50%, -8px)" }}
+                >
+                  {won(d.value)}원{d.partial ? " · 일부 기간" : ""}
+                </div>
+              </div>
+              <span className="text-[11px] text-[#99a0b0]">
+                {d.label}
+                {d.partial && <sup className="ml-0.5 font-bold text-[#7c5cf6]">*</sup>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {hasPartial && (
+        <div className="mt-2.5 text-[11px] text-[#9aa1b2]">* 데이터가 일부 기간만 있는 달</div>
+      )}
+    </>
   );
 }
 
@@ -108,11 +171,11 @@ export default function Dashboard({ data }: { data: DashboardData }) {
   const s = data.summary;
   const scoreColor = SCORE_COLOR[data.health.label] ?? "#4f7cf0";
 
+  const months = Math.max(s.분석개월수, 1);
   const stats = [
-    { label: "총지출", value: won(s.총지출), unit: "원" },
-    { label: "월평균", value: won(s.월평균), unit: "원" },
-    { label: "거래건수", value: String(s.거래건수), unit: "건" },
-    { label: "건당평균", value: won(s.건당평균), unit: "원" },
+    { label: "월평균 지출", value: won(s.월평균), unit: "원" },
+    { label: "월평균 거래건수", value: String(Math.round(s.거래건수 / months)), unit: "건" },
+    { label: "건당 평균", value: won(s.건당평균), unit: "원" },
   ];
 
   return (
@@ -147,8 +210,8 @@ export default function Dashboard({ data }: { data: DashboardData }) {
         </ul>
       </div>
 
-      {/* 통계 4칸 */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {/* 월평균 핵심 지표 */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {stats.map((m) => (
           <div key={m.label} className={`${CARD} px-5 py-[18px]`}>
             <div className="mb-2 text-[13px] text-[#8a92a6]">{m.label}</div>
@@ -167,28 +230,25 @@ export default function Dashboard({ data }: { data: DashboardData }) {
         </Panel>
         <Panel title="월별 지출 추이">
           <Bars
-            data={data.monthly.map((m) => ({ label: m.year_month, value: m.합계 }))}
+            data={data.monthly.map((m) => ({
+              label: m.year_month,
+              value: m.합계,
+              partial: m.partial,
+            }))}
             gradient={["#7db3ff", "#5b9bf6"]}
             height={188}
           />
         </Panel>
       </div>
 
-      {/* 차트 2행: 요일 + 시간대 */}
-      <div className="grid gap-[22px] md:grid-cols-2">
-        <Panel title="요일별 지출">
-          <Bars
-            data={data.weekday.map((w) => ({ label: w.요일, value: w.합계 }))}
-            gradient={["#b9a7ff", "#9275f0"]}
-          />
-        </Panel>
-        <Panel title="시간대별 지출">
-          <Bars
-            data={data.timeBucket.map((t) => ({ label: t.시간대, value: t.합계 }))}
-            gradient={["#5ee9b5", "#2bb98a"]}
-          />
-        </Panel>
-      </div>
+      {/* 데이터에 따라 동적으로 추가되는 분석 카드 */}
+      {data.cards.length > 0 && (
+        <div className="grid gap-[22px] md:grid-cols-2">
+          {data.cards.map((card, i) => (
+            <DynamicCard key={i} card={card} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

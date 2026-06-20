@@ -54,18 +54,88 @@ def _summary(df: pd.DataFrame) -> dict:
     return A.spending_summary(df)
 
 
+def _dynamic_cards(df: pd.DataFrame) -> list[dict]:
+    """입력 데이터에 따라 가변적으로 노출할 분석 카드 목록을 만든다.
+
+    고정 섹션(진단/월평균/카테고리/월별추이)을 제외한 나머지 분석을
+    데이터 상황에 맞춰 카드로 추가한다. 프론트엔드는 이 배열을 순회해 렌더한다.
+    """
+    cards: list[dict] = []
+
+    # 요일별 지출 (막대)
+    wk = A.weekday_spending(df)
+    cards.append({
+        "kind": "bars",
+        "title": "요일별 지출",
+        "gradient": ["#b9a7ff", "#9275f0"],
+        "bars": [{"label": str(r.요일), "value": float(r.합계)} for r in wk.itertuples()],
+    })
+
+    # 시간대별 지출 (막대)
+    tb = A.time_bucket_spending(df)
+    cards.append({
+        "kind": "bars",
+        "title": "시간대별 지출",
+        "gradient": ["#5ee9b5", "#2bb98a"],
+        "bars": [{"label": str(r.시간대), "value": float(r.합계)} for r in tb.itertuples()],
+    })
+
+    # 최근 달 카테고리 증감 (두 달 이상일 때만)
+    chg = A.category_monthly_change(df)
+    if not chg.empty:
+        prev_m, last_m = chg.attrs.get("prev_month"), chg.attrs.get("last_month")
+        items = [
+            {
+                "name": str(r.category),
+                "sub": f"{prev_m} → {last_m}",
+                "value": f"{'+' if r.증감액 >= 0 else ''}{r.증감액:,.0f}원",
+            }
+            for r in chg.head(6).itertuples()
+        ]
+        cards.append({"kind": "list", "title": "최근 달 카테고리 증감", "items": items})
+
+    # 지출 상위 가맹점 (있을 때만)
+    top = A.top_merchants(df, 7)
+    if len(top):
+        items = [
+            {
+                "name": str(r.가맹점),
+                "sub": f"{r.카테고리} · {r.건수}건",
+                "value": f"{r.합계:,.0f}원",
+            }
+            for r in top.itertuples()
+        ]
+        cards.append({"kind": "list", "title": "지출 상위 가맹점", "items": items})
+
+    # 절약 포인트 (최다 지출이 변동비 카테고리일 때만)
+    cat = A.category_breakdown(df)
+    top_cat = str(cat.iloc[0]["category"])
+    if top_cat in A.DISCRETIONARY:
+        s = A.savings_estimate(df, top_cat, 30)
+        cards.append({
+            "kind": "savings",
+            "title": "절약 포인트",
+            "text": (
+                f"{top_cat}를 30% 줄이면 월 {s['월절약액']:,.0f}원, "
+                f"연 {s['연절약액']:,.0f}원 절약할 수 있어요."
+            ),
+        })
+
+    return cards
+
+
 def _dashboard_payload(df: pd.DataFrame) -> dict:
-    """대시보드가 필요로 하는 모든 분석 결과를 한 번에 묶는다."""
+    """대시보드가 필요로 하는 분석 결과를 묶는다.
+
+    고정 섹션 + 데이터에 따라 가변적으로 추가되는 cards 배열을 함께 내려준다.
+    """
     return {
         "summary": _summary(df),
         "health": A.health_score(df),
         "insights": A.key_insights(df),
         "categories": _records(A.category_breakdown(df)),
         "monthly": _records(A.monthly_trend(df)),
-        "weekday": _records(A.weekday_spending(df)),
-        "timeBucket": _records(A.time_bucket_spending(df)),
-        "topMerchants": _records(A.top_merchants(df, 10)),
-        "recentChange": _records(A.category_monthly_change(df)),
+        "cards": _dynamic_cards(df),
     }
 
 
