@@ -2,16 +2,14 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export default function Welcome({
-  onStart,
-  loading,
-  error,
-}: {
-  onStart: (file: File | null) => void;
-  loading: boolean;
-  error: string | null;
-}) {
+import { streamAnalyze } from "@/lib/api";
+
+const SESSION_KEY = "wallet_session_id";
+
+export default function Welcome() {
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [panel, setPanel] = useState<null | "help" | "explore">(null);
@@ -19,6 +17,30 @@ export default function Welcome({
   const lastView = useRef<"help" | "explore">("help");
   if (panel) lastView.current = panel;
   const view = panel ?? lastView.current;
+
+  // 분석 진행(스트리밍) 상태
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [steps, setSteps] = useState<string[]>([]);
+
+  async function start(fileToAnalyze: File | null) {
+    setError(null);
+    setSteps([]);
+    setLoading(true);
+    setPanel(null);
+    const sessionId = await streamAnalyze(
+      fileToAnalyze,
+      (s) => setSteps((prev) => [...prev, s]),
+      (msg) => setError(msg),
+    );
+    if (sessionId) {
+      localStorage.setItem(SESSION_KEY, sessionId);
+      router.push("/dashboard");
+      // 네비게이션 동안 분석 화면 유지를 위해 loading은 해제하지 않는다.
+    } else {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -44,6 +66,41 @@ export default function Welcome({
         </nav>
       </header>
 
+      {loading ? (
+        <div className="flex flex-1 items-center justify-center px-8 pb-[10vh]">
+          <div className="flex flex-col items-center gap-7" style={{ animation: "wcFade 0.4s ease both" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/savy_character.png"
+              alt="세이비"
+              className="h-[180px] w-[180px] rounded-full object-cover"
+              style={{ animation: "wcFloat 4s ease-in-out infinite" }}
+            />
+            <div className="text-[20px] font-extrabold text-[#1c1f2b]">세이비가 분석하고 있어요</div>
+            <ul className="flex w-[330px] max-w-[80vw] flex-col gap-2.5">
+              {steps.map((s, i) => {
+                const done = i < steps.length - 1;
+                return (
+                  <li
+                    key={i}
+                    className="flex items-center gap-2.5 text-[14px]"
+                    style={{ animation: "wcFade 0.3s ease both" }}
+                  >
+                    {done ? (
+                      <span className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-[#7c5cf6] text-[10px] font-bold text-white">
+                        ✓
+                      </span>
+                    ) : (
+                      <span className="h-[18px] w-[18px] flex-none animate-spin rounded-full border-2 border-[#e4ddff] border-t-[#7c5cf6]" />
+                    )}
+                    <span className={done ? "text-[#9aa1b2]" : "font-semibold text-[#1c1f2b]"}>{s}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      ) : (
       <div className="relative flex flex-1 overflow-hidden">
         <div
           className="flex flex-1 items-center justify-center px-8 pb-[16vh] transition-[margin] duration-300 ease-out"
@@ -133,7 +190,7 @@ export default function Welcome({
 
           {/* 분석 버튼 — 파일이 업로드되어야 활성화 */}
           <button
-            onClick={() => file && onStart(file)}
+            onClick={() => file && start(file)}
             disabled={!file || loading}
             className="wc-primary w-full rounded-[16px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-[18px] text-[16.5px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             style={{ boxShadow: "0 10px 26px rgba(124,92,246,0.3)" }}
@@ -208,10 +265,7 @@ export default function Welcome({
                   <li className="flex gap-2"><span className="text-[#7c5cf6]">•</span><span>세이비와 자연어 채팅</span></li>
                 </ul>
                 <button
-                  onClick={() => {
-                    setPanel(null);
-                    onStart(null);
-                  }}
+                  onClick={() => start(null)}
                   disabled={loading}
                   className="wc-primary mt-1 w-full rounded-[14px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-[15px] text-[15px] font-bold text-white disabled:opacity-60"
                   style={{ boxShadow: "0 10px 26px rgba(124,92,246,0.3)" }}
@@ -222,6 +276,7 @@ export default function Welcome({
             )}
         </aside>
       </div>
+      )}
     </div>
   );
 }

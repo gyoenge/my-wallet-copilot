@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 import os
@@ -187,6 +188,47 @@ async def upload(file: UploadFile | None = File(default=None)) -> dict:
         raise HTTPException(status_code=400, detail=f"파일을 분석할 수 없습니다: {e}") from e
     df = SESSIONS[session_id]["df"]
     return {"session_id": session_id, "summary": _summary(df)}
+
+
+@app.post("/api/analyze")
+async def analyze(file: UploadFile | None = File(default=None)):
+    """업로드(또는 샘플)를 분석하며 진행 단계를 SSE로 스트리밍한다.
+
+    각 단계를 step 이벤트로 흘리고, 끝나면 done 이벤트로 session_id를 보낸다.
+    """
+    file_bytes = await file.read() if file is not None else None
+    use_llm = os.getenv("WALLET_COPILOT_LLM_CATEGORIZE", "false").lower() == "true"
+
+    async def gen():
+        try:
+            yield {"event": "step", "data": "카드 내역 불러오는 중"}
+            await asyncio.sleep(0.9)
+            source = io.BytesIO(file_bytes) if file_bytes else DEFAULT_DATA
+            df = load_transactions(source)
+
+            yield {"event": "step", "data": f"거래 {len(df)}건 확인 완료"}
+            await asyncio.sleep(0.9)
+
+            yield {"event": "step", "data": "소비 카테고리 분류 중"}
+            df = categorize(df, use_llm=use_llm)
+            await asyncio.sleep(1.1)
+
+            yield {"event": "step", "data": "카테고리·요일·시간대 패턴 분석 중"}
+            await asyncio.sleep(1.2)
+
+            yield {"event": "step", "data": "소비 건강 점수와 절약 포인트 계산 중"}
+            await asyncio.sleep(1.1)
+
+            yield {"event": "step", "data": "세이비의 진단 정리 중"}
+            await asyncio.sleep(0.9)
+
+            session_id = str(uuid.uuid4())
+            SESSIONS[session_id] = {"df": df, "agent": None}
+            yield {"event": "done", "data": session_id}
+        except Exception as e:  # noqa: BLE001
+            yield {"event": "error", "data": f"파일을 분석할 수 없습니다: {e}"}
+
+    return EventSourceResponse(gen())
 
 
 @app.get("/api/dashboard/{session_id}")
