@@ -19,6 +19,10 @@ lib64/
 parts/
 sdist/
 var/
+
+# 프론트엔드 소스(fe/lib)는 Python의 lib/ 무시 규칙에서 제외한다.
+!fe/lib/
+!fe/lib/**
 wheels/
 share/python-wheels/
 *.egg-info/
