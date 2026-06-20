@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+###
+
+# Data
+data/ 
+
+# claude 
+.claude 

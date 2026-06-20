@@ -1,0 +1,10 @@
+streamlit>=1.40
+pandas>=2.2
+xlrd>=2.0
+openpyxl>=3.1
+plotly>=5.24
+langgraph>=0.2.50
+langchain-anthropic>=0.3
+langchain-core>=0.3
+anthropic>=0.40
+python-dotenv>=1.0
