@@ -5,9 +5,9 @@
 > 세이비 — 새는 돈을 찾아주는 지갑 수호자
 
 <p align="center">
-  <img src="demo1.png" alt="My Wallet Copilot 데모" width="860" />
-  <img src="demo2.png" alt="My Wallet Copilot 데모" width="860" />
-  <img src="demo3.png" alt="My Wallet Copilot 데모" width="860" />
+  <img src="assets/demo/demo1.png" alt="My Wallet Copilot 데모" width="860" />
+  <img src="assets/demo/demo2.png" alt="My Wallet Copilot 데모" width="860" />
+  <img src="assets/demo/demo3.png" alt="My Wallet Copilot 데모" width="860" />
 </p>
 
 ## 무엇을 해주나요
