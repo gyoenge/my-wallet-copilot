@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 
 export default function Welcome({
@@ -13,6 +13,7 @@ export default function Welcome({
   error: string | null;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -26,8 +27,12 @@ export default function Welcome({
           <button className="rounded-[12px] px-[18px] py-3 text-[16px] font-medium text-[#4b5263] transition hover:bg-[#eef0f5]">
             도움말
           </button>
-          <button className="rounded-[12px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] px-[22px] py-3 text-[16px] font-semibold text-white transition hover:opacity-90">
-            로그인
+          <button
+            onClick={() => onStart(null)}
+            disabled={loading}
+            className="rounded-[12px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] px-[22px] py-3 text-[16px] font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+          >
+            둘러보기
           </button>
         </nav>
       </header>
@@ -85,14 +90,14 @@ export default function Welcome({
             type="file"
             accept=".xls,.xlsx,.csv"
             className="hidden"
-            onChange={(e) => onStart(e.target.files?.[0] ?? null)}
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
           <div
             onClick={() => !loading && fileRef.current?.click()}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              if (!loading) onStart(e.dataTransfer.files?.[0] ?? null);
+              if (!loading) setFile(e.dataTransfer.files?.[0] ?? null);
             }}
             className="wc-drop cursor-pointer rounded-[22px] border-[1.5px] border-dashed border-[rgba(124,92,246,0.45)] bg-[#faf9ff] px-[30px] py-[40px] text-center"
           >
@@ -102,25 +107,27 @@ export default function Welcome({
                 <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
               </svg>
             </div>
-            <div className="mb-1.5 text-[17.5px] font-bold text-[#1c1f2b]">카드 내역 파일을 올려줘</div>
-            <div className="text-[14px] text-[#9aa1b2]">CSV · 엑셀 파일을 끌어다 놓거나 클릭해서 선택</div>
+            {file ? (
+              <>
+                <div className="mb-1.5 text-[17.5px] font-bold text-[#7c5cf6]">{file.name}</div>
+                <div className="text-[14px] text-[#9aa1b2]">다른 파일을 올리려면 다시 클릭</div>
+              </>
+            ) : (
+              <>
+                <div className="mb-1.5 text-[17.5px] font-bold text-[#1c1f2b]">카드 내역 파일을 올려줘</div>
+                <div className="text-[14px] text-[#9aa1b2]">CSV · 엑셀 파일을 끌어다 놓거나 클릭해서 선택</div>
+              </>
+            )}
           </div>
 
-          {/* 구분선 */}
-          <div className="flex items-center gap-3.5">
-            <div className="h-px flex-1 bg-[#e6e8ef]" />
-            <div className="text-[13px] text-[#aab0c0]">또는</div>
-            <div className="h-px flex-1 bg-[#e6e8ef]" />
-          </div>
-
-          {/* 샘플 버튼 */}
+          {/* 분석 버튼 — 파일이 업로드되어야 활성화 */}
           <button
-            onClick={() => onStart(null)}
-            disabled={loading}
-            className="wc-primary w-full rounded-[16px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-[18px] text-[16.5px] font-bold text-white disabled:opacity-60"
+            onClick={() => file && onStart(file)}
+            disabled={!file || loading}
+            className="wc-primary w-full rounded-[16px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-[18px] text-[16.5px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             style={{ boxShadow: "0 10px 26px rgba(124,92,246,0.3)" }}
           >
-            {loading ? "세이비가 내역 분석하는 중..." : "샘플 데이터로 바로 둘러보기"}
+            {loading ? "세이비가 내역 분석하는 중..." : "분석하기"}
           </button>
 
           {error && (
