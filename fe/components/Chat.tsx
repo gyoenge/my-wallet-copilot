@@ -56,19 +56,19 @@ export default function Chat({ sessionId }: { sessionId: string | null }) {
   }
 
   return (
-    <div className="sticky top-7 flex min-h-[620px] flex-col rounded-[22px] border border-white/[0.06] bg-[rgba(20,24,38,0.7)]" style={{ height: "calc(100vh - 56px)" }}>
+    <div className="flex h-full min-h-[560px] flex-col rounded-[22px] border border-[#ebedf3] bg-white shadow-[0_1px_3px_rgba(20,20,50,0.04)]">
       {/* 헤더 */}
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-[22px] py-5">
+      <div className="flex items-center gap-3 border-b border-[#eef0f5] px-[22px] py-5">
         <TLogo size={40} radius={12} glow={false} />
         <div>
-          <div className="text-[16px] font-bold">세이비</div>
-          <div className="text-[12.5px] text-[#9aa3bd]">새는 돈을 찾아주는 지갑 수호자</div>
+          <div className="text-[16px] font-bold text-[#1c1f2b]">세이비</div>
+          <div className="text-[12.5px] text-[#8a92a6]">새는 돈을 찾아주는 지갑 수호자</div>
         </div>
       </div>
 
       {/* 메시지 영역 */}
       <div ref={scrollRef} className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-[22px]">
-        <div className="text-[15px] leading-[1.6] text-[#d7dcec]">
+        <div className="text-[15px] leading-[1.6] text-[#3c4252]">
           카드 내역에 대해 뭐든 물어봐. 숫자는 내가 직접 까보고 답할게.
         </div>
         <div className="flex flex-wrap gap-[9px]">
@@ -77,7 +77,7 @@ export default function Chat({ sessionId }: { sessionId: string | null }) {
               key={sug}
               onClick={() => send(sug)}
               disabled={!sessionId || busy}
-              className="wc-chip rounded-[11px] border border-white/10 bg-white/[0.04] px-3.5 py-[9px] text-[13px] text-[#cfd5e8] disabled:opacity-50"
+              className="wc-chip rounded-[11px] border border-[#e5e7ef] bg-white px-3.5 py-[9px] text-[13px] text-[#4b5263] disabled:opacity-50"
             >
               {sug}
             </button>
@@ -97,10 +97,10 @@ export default function Chat({ sessionId }: { sessionId: string | null }) {
           ) : (
             <div key={i} className="flex flex-col items-start">
               <div
-                className="max-w-[84%] whitespace-pre-wrap rounded-[15px] bg-white/[0.06] px-[15px] py-[11px] text-[14.5px] leading-[1.6] text-[#e3e7f3]"
+                className="max-w-[84%] whitespace-pre-wrap rounded-[15px] bg-[#f1f2f6] px-[15px] py-[11px] text-[14.5px] leading-[1.6] text-[#2a2d38]"
                 style={{ borderBottomLeftRadius: 5 }}
               >
-                {m.content || <span className="text-[#7b84a0]">…</span>}
+                {m.content || <span className="text-[#9aa1b2]">…</span>}
               </div>
             </div>
           ),
@@ -113,14 +113,14 @@ export default function Chat({ sessionId }: { sessionId: string | null }) {
           e.preventDefault();
           send(input);
         }}
-        className="flex gap-3 border-t border-white/[0.06] px-[18px] py-4"
+        className="flex gap-3 border-t border-[#eef0f5] px-[18px] py-4"
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={sessionId ? "질문을 입력하세요" : "데이터 로딩 중..."}
           disabled={!sessionId || busy}
-          className="flex-1 rounded-[13px] border border-white/10 bg-white/[0.04] px-4 py-[13px] text-[14px] text-[#e9ecf5] outline-none placeholder:text-[#5f6885] disabled:opacity-50"
+          className="flex-1 rounded-[13px] border border-[#e2e5ee] bg-[#f7f8fb] px-4 py-[13px] text-[14px] text-[#1c1f2b] outline-none placeholder:text-[#9aa1b2] disabled:opacity-50"
         />
         <button
           type="submit"

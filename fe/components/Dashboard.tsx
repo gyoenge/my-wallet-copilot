@@ -12,16 +12,18 @@ const PALETTE = [
 ];
 
 const SCORE_COLOR: Record<string, string> = {
-  양호: "#34d399",
-  보통: "#60a5fa",
-  주의: "#fbbf24",
-  위험: "#f87171",
+  양호: "#16a34a",
+  보통: "#4f7cf0",
+  주의: "#d97706",
+  위험: "#dc2626",
 };
+
+const CARD = "rounded-[20px] border border-[#ebedf3] bg-white shadow-[0_1px_3px_rgba(20,20,50,0.04)]";
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[20px] border border-white/[0.06] bg-[rgba(20,24,38,0.7)] px-6 py-[22px]">
-      <div className="mb-5 text-[16px] font-bold">{title}</div>
+    <div className={`${CARD} px-6 py-[22px]`}>
+      <div className="mb-5 text-[16px] font-bold text-[#1c1f2b]">{title}</div>
       {children}
     </div>
   );
@@ -57,7 +59,7 @@ function Donut({ cats }: { cats: DashboardData["categories"] }) {
               className="h-[9px] w-[9px] flex-none rounded-[3px]"
               style={{ background: PALETTE[i % PALETTE.length] }}
             />
-            <span className="text-[#cfd5e8]">
+            <span className="text-[#4b5263]">
               {c.category} {c.비중}%
             </span>
           </div>
@@ -95,7 +97,7 @@ function Bars({
               title={`${d.label}: ${won(d.value)}원`}
             />
           </div>
-          <span className="text-[11px] text-[#8b93ad]">{d.label}</span>
+          <span className="text-[11px] text-[#99a0b0]">{d.label}</span>
         </div>
       ))}
     </div>
@@ -104,7 +106,7 @@ function Bars({
 
 export default function Dashboard({ data }: { data: DashboardData }) {
   const s = data.summary;
-  const scoreColor = SCORE_COLOR[data.health.label] ?? "#60a5fa";
+  const scoreColor = SCORE_COLOR[data.health.label] ?? "#4f7cf0";
 
   const stats = [
     { label: "총지출", value: won(s.총지출), unit: "원" },
@@ -117,19 +119,19 @@ export default function Dashboard({ data }: { data: DashboardData }) {
     <div className="flex flex-col gap-[22px]">
       {/* 진단 히어로 */}
       <div
-        className="rounded-[22px] border border-[rgba(139,124,246,0.22)] px-7 py-[26px]"
-        style={{ background: "linear-gradient(150deg, rgba(48,38,92,0.85), rgba(26,28,52,0.85))" }}
+        className="rounded-[22px] border border-[#e4ddff] px-7 py-[26px]"
+        style={{ background: "linear-gradient(150deg, #f3efff, #eef3ff)" }}
       >
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
             <TLogo size={40} radius={12} glow={false} />
-            <div className="text-[17px] font-bold">세이비의 한 줄 진단</div>
+            <div className="text-[17px] font-bold text-[#1c1f2b]">세이비의 한 줄 진단</div>
           </div>
           <div className="text-right">
-            <div className="mb-1 text-xs text-[#9aa3bd]">소비 건강 점수</div>
+            <div className="mb-1 text-xs text-[#8a92a6]">소비 건강 점수</div>
             <div className="text-[22px] font-extrabold" style={{ color: scoreColor }}>
               {data.health.score}{" "}
-              <span className="text-[14px] font-semibold text-[#9aa3bd]">
+              <span className="text-[14px] font-semibold text-[#8a92a6]">
                 {data.health.label}
               </span>
             </div>
@@ -137,8 +139,8 @@ export default function Dashboard({ data }: { data: DashboardData }) {
         </div>
         <ul className="m-0 flex list-none flex-col gap-[13px] p-0">
           {data.insights.map((t, i) => (
-            <li key={i} className="flex gap-[11px] text-[15px] leading-[1.5] text-[#d7dcec]">
-              <span className="text-[#8b7cf6]">•</span>
+            <li key={i} className="flex gap-[11px] text-[15px] leading-[1.5] text-[#3c4252]">
+              <span className="text-[#7c5cf6]">•</span>
               <span>{t}</span>
             </li>
           ))}
@@ -148,12 +150,9 @@ export default function Dashboard({ data }: { data: DashboardData }) {
       {/* 통계 4칸 */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {stats.map((m) => (
-          <div
-            key={m.label}
-            className="rounded-[18px] border border-white/[0.06] bg-[rgba(20,24,38,0.7)] px-5 py-[18px]"
-          >
-            <div className="mb-2 text-[13px] text-[#9aa3bd]">{m.label}</div>
-            <div className="text-[23px] font-extrabold tracking-tight">
+          <div key={m.label} className={`${CARD} px-5 py-[18px]`}>
+            <div className="mb-2 text-[13px] text-[#8a92a6]">{m.label}</div>
+            <div className="text-[23px] font-extrabold tracking-tight text-[#1c1f2b]">
               {m.value}
               <span className="text-[15px] font-bold">{m.unit}</span>
             </div>

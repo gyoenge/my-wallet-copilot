@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -15,10 +15,10 @@
 body {
   margin: 0;
   background:
-    radial-gradient(120% 80% at 80% -10%, rgba(124, 92, 246, 0.1), transparent 60%),
-    #0a0d18;
+    radial-gradient(100% 60% at 20% 6%, rgba(124, 92, 246, 0.1), transparent 60%),
+    #f4f5fa;
   background-attachment: fixed;
-  color: #e9ecf5;
+  color: #1c1f2b;
   font-family: "Pretendard", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -36,22 +36,30 @@ body {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
+@keyframes wcFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes wcPop {
+  from { opacity: 0; transform: translateX(-10px) scale(0.96); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(20, 20, 50, 0.14); border-radius: 4px; }
 
 /* 호버 인터랙션 (디자인의 style-hover 대응) */
 .wc-drop { transition: border-color 0.2s, background 0.2s; }
 .wc-drop:hover {
-  border-color: #a78bfa;
-  background: linear-gradient(160deg, rgba(44, 36, 82, 0.7), rgba(24, 28, 46, 0.7));
+  border-color: #7c5cf6;
+  background: #f3f0ff;
 }
 .wc-primary { transition: transform 0.15s, box-shadow 0.15s; }
 .wc-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 36px rgba(124, 92, 246, 0.5);
+  box-shadow: 0 14px 32px rgba(124, 92, 246, 0.42);
 }
-.wc-ghost { transition: background 0.15s; }
-.wc-ghost:hover { background: rgba(255, 255, 255, 0.09); }
-.wc-chip { transition: background 0.15s; }
-.wc-chip:hover { background: rgba(139, 124, 246, 0.16); }
+.wc-ghost { transition: background 0.15s, border-color 0.15s; }
+.wc-ghost:hover { background: #f3f4f8; border-color: #d3d7e2; }
+.wc-chip { transition: background 0.15s, border-color 0.15s; }
+.wc-chip:hover { background: #f3f0ff; border-color: #d8cffb; }

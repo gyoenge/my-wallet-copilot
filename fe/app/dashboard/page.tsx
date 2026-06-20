@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [hasKey, setHasKey] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"analysis" | "chat">("analysis");
 
   useEffect(() => {
     const sid = localStorage.getItem(SESSION_KEY);
@@ -42,26 +43,26 @@ export default function DashboardPage() {
 
   if (loading || !data) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-[#9aa3bd]">
+      <div className="flex min-h-screen items-center justify-center text-[#8a92a6]">
         불러오는 중...
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1640px] px-8 pb-14 pt-7" style={{ animation: "wcFade 0.5s ease both" }}>
+    <div className="mx-auto max-w-[1280px] px-8 pb-14 pt-7" style={{ animation: "wcFade 0.5s ease both" }}>
       {/* 헤더 */}
       <header className="mb-[26px] flex items-center justify-between">
         <div className="flex items-center gap-4">
           <TLogo size={56} radius={16} />
           <div>
-            <div className="text-[25px] font-extrabold tracking-tight">My Wallet Copilot</div>
-            <div className="mt-0.5 text-[14px] text-[#9aa3bd]">세이비 · 새는 돈을 찾아주는 지갑 수호자</div>
+            <div className="text-[25px] font-extrabold tracking-tight text-[#1c1f2b]">My Wallet Copilot</div>
+            <div className="mt-0.5 text-[14px] text-[#8a92a6]">세이비 · 새는 돈을 찾아주는 지갑 수호자</div>
           </div>
         </div>
         <button
           onClick={() => router.push("/")}
-          className="wc-ghost rounded-xl border border-white/10 bg-white/[0.04] px-5 py-[11px] text-[14px] font-semibold text-[#cfd5e8]"
+          className="wc-ghost rounded-xl border border-[#e2e5ee] bg-white px-5 py-[11px] text-[14px] font-semibold text-[#4b5263]"
         >
           내역 업로드
         </button>
@@ -73,11 +74,36 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 본문: 대시보드(좌) + 채팅(우) */}
-      <div className="grid items-start gap-[22px] lg:grid-cols-[1.85fr_1fr]">
-        <Dashboard data={data} />
-        <Chat sessionId={hasKey ? sessionId : null} />
+      {/* 탭 전환 */}
+      <div className="mb-6 inline-flex gap-1 rounded-[15px] border border-[#e7e9f1] bg-white p-[5px] shadow-[0_1px_2px_rgba(20,20,50,0.04)]">
+        {(["analysis", "chat"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`rounded-[11px] px-5 py-2.5 text-[14px] font-bold transition ${
+              tab === t
+                ? "bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] text-white shadow-[0_6px_16px_rgba(124,92,246,0.32)]"
+                : "text-[#8a92a6] hover:text-[#1c1f2b]"
+            }`}
+          >
+            {t === "analysis" ? "📊 분석 결과" : "💬 세이비와 채팅"}
+          </button>
+        ))}
       </div>
+
+      {/* 탭 내용 */}
+      {tab === "analysis" ? (
+        <div style={{ animation: "wcFade 0.35s ease both" }}>
+          <Dashboard data={data} />
+        </div>
+      ) : (
+        <div
+          className="mx-auto max-w-[860px]"
+          style={{ height: "calc(100vh - 230px)", animation: "wcFade 0.35s ease both" }}
+        >
+          <Chat sessionId={hasKey ? sessionId : null} />
+        </div>
+      )}
     </div>
   );
 }
