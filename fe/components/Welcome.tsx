@@ -20,22 +20,17 @@ export default function Welcome({
       <div className="w-full max-w-[560px]" style={{ animation: "wcFade 0.6s ease both" }}>
         {/* 히어로 */}
         <div className="mb-9 flex flex-col items-center text-center">
-          <div
-            className="mb-[22px] flex h-[88px] w-[88px] items-center justify-center rounded-[26px] bg-gradient-to-br from-[#8b7cf6] to-[#5b8def] text-[38px] font-extrabold text-white"
-            style={{ boxShadow: "0 16px 44px rgba(124,92,246,0.42)" }}
-          >
-            T
-          </div>
+          <TLogo size={88} radius={26} className="mb-[22px]" />
           <div className="mb-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-[#8b7cf6]">
             My Wallet Copilot
           </div>
           <h1 className="mb-3.5 text-[30px] font-extrabold leading-[1.3]">
-            안녕, 나는 <span className="text-[#a78bfa]">김티(T)</span>야
+            안녕, 나는 <span className="text-[#a78bfa]">세이비</span>야
           </h1>
           <p className="m-0 max-w-[420px] text-[16px] leading-[1.7] text-[#9aa3bd]">
-            팩폭 전문 현실 절친. 카드 내역만 던져주면
+            새는 돈을 찾아주는 지갑 수호자.
             <br />
-            어디에 돈을 흘리고 있는지 가감 없이 까볼게.
+            카드 내역만 올리면 소비 습관을 분석해줄게.
           </p>
         </div>
 
@@ -85,7 +80,7 @@ export default function Welcome({
           className="wc-primary w-full rounded-2xl bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-4 text-[15px] font-bold text-white disabled:opacity-60"
           style={{ boxShadow: "0 10px 30px rgba(124,92,246,0.35)" }}
         >
-          {loading ? "김티가 내역 까보는 중..." : "샘플 데이터로 바로 둘러보기"}
+          {loading ? "세이비가 내역 분석하는 중..." : "샘플 데이터로 바로 둘러보기"}
         </button>
 
         {error && (

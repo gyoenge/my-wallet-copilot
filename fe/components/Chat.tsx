@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { streamChat } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
+import TLogo from "./TLogo";
 
 const SUGGESTIONS = [
   "내가 가장 돈을 많이 쓰는 요일은?",
@@ -58,12 +59,10 @@ export default function Chat({ sessionId }: { sessionId: string | null }) {
     <div className="sticky top-7 flex min-h-[620px] flex-col rounded-[22px] border border-white/[0.06] bg-[rgba(20,24,38,0.7)]" style={{ height: "calc(100vh - 56px)" }}>
       {/* 헤더 */}
       <div className="flex items-center gap-3 border-b border-white/[0.06] px-[22px] py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8b7cf6] to-[#5b8def] text-[16px] font-extrabold text-white">
-          T
-        </div>
+        <TLogo size={40} radius={12} glow={false} />
         <div>
-          <div className="text-[16px] font-bold">김티(T)</div>
-          <div className="text-[12.5px] text-[#9aa3bd]">팩폭 전문 현실 절친</div>
+          <div className="text-[16px] font-bold">세이비</div>
+          <div className="text-[12.5px] text-[#9aa3bd]">새는 돈을 찾아주는 지갑 수호자</div>
         </div>
       </div>
 

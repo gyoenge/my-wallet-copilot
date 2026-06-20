@@ -48,10 +48,10 @@ export default function Home() {
       {/* 헤더 */}
       <header className="mb-[26px] flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <TLogo size={56} font={22} radius={16} />
+          <TLogo size={56} radius={16} />
           <div>
             <div className="text-[25px] font-extrabold tracking-tight">My Wallet Copilot</div>
-            <div className="mt-0.5 text-[14px] text-[#9aa3bd]">김티(T) · 팩폭 전문 현실 절친</div>
+            <div className="mt-0.5 text-[14px] text-[#9aa3bd]">세이비 · 새는 돈을 찾아주는 지갑 수호자</div>
           </div>
         </div>
         <button

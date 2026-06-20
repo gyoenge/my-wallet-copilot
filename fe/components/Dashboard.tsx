@@ -1,6 +1,7 @@
 "use client";
 
 import type { Dashboard as DashboardData } from "@/lib/types";
+import TLogo from "./TLogo";
 
 const won = (x: number) => Math.round(x).toLocaleString();
 
@@ -118,10 +119,8 @@ export default function Dashboard({ data }: { data: DashboardData }) {
       >
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8b7cf6] to-[#5b8def] text-[16px] font-extrabold text-white">
-              T
-            </div>
-            <div className="text-[17px] font-bold">김티의 한 줄 진단</div>
+            <TLogo size={40} radius={12} glow={false} />
+            <div className="text-[17px] font-bold">세이비의 한 줄 진단</div>
           </div>
           <div className="text-right">
             <div className="mb-1 text-xs text-[#9aa3bd]">소비 건강 점수</div>

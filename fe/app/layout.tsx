@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "My Wallet Copilot",
-  description: "카드 소비 분석 AI 에이전트 — 김티(T)",
+  description: "카드 소비 분석 AI 에이전트 — 세이비",
 };
 
 export default function RootLayout({
