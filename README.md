@@ -4,6 +4,10 @@
 
 > 세이비 — 새는 돈을 찾아주는 지갑 수호자
 
+<p align="center">
+  <img src="demo.png" alt="My Wallet Copilot 데모" width="860" />
+</p>
+
 ## 무엇을 해주나요
 
 - **소비 한눈에** — 카테고리·월별·요일·시간대별 지출을 대시보드로 시각화
