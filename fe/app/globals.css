@@ -1,0 +1,29 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.18), transparent 32%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 30%),
+    linear-gradient(180deg, #070a12 0%, #0b1120 48%, #050816 100%);
+  background-attachment: fixed;
+  color: #e5e7eb;
+  min-height: 100vh;
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+}

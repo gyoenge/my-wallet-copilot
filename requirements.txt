@@ -1,8 +1,15 @@
-streamlit>=1.40
+# 백엔드 (FastAPI)
+fastapi>=0.115
+uvicorn[standard]>=0.32
+sse-starlette>=2.1
+python-multipart>=0.0.12
+
+# 데이터 / 분석
 pandas>=2.2
 xlrd>=2.0
 openpyxl>=3.1
-plotly>=5.24
+
+# 에이전트 (LangGraph + Claude)
 langgraph>=0.2.50
 langchain-anthropic>=0.3
 langchain-core>=0.3

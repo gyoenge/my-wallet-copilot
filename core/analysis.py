@@ -120,3 +120,56 @@ def savings_estimate(df: pd.DataFrame, category: str, reduction_pct: float) -> d
         "월절약액": monthly * factor,
         "연절약액": monthly * factor * 12,
     }
+
+
+# 변동비 성격이 강해 줄이기 쉬운(=소비 점검 대상) 카테고리.
+DISCRETIONARY = {"배달", "외식", "카페/디저트", "편의점", "쇼핑/생활"}
+
+
+def health_score(df: pd.DataFrame) -> dict:
+    """변동비 카테고리의 지출 비중으로 0~100 소비 건강 점수를 매긴다.
+
+    숫자만 돌려준다(중립). 페르소나 문구는 프론트엔드에서 입힌다.
+    """
+    cat = category_breakdown(df)
+    score = 100
+    for r in cat.itertuples():
+        if r.category in DISCRETIONARY:
+            if r.비중 >= 25:
+                score -= 15
+            elif r.비중 >= 15:
+                score -= 8
+    score = max(40, min(98, int(score)))
+    if score >= 85:
+        label = "양호"
+    elif score >= 70:
+        label = "보통"
+    elif score >= 55:
+        label = "주의"
+    else:
+        label = "위험"
+    return {"score": score, "label": label}
+
+
+def key_insights(df: pd.DataFrame) -> list[str]:
+    """대시보드 상단에 띄울 핵심 인사이트 문장들(중립 톤)."""
+    cat = category_breakdown(df)
+    wk = weekday_spending(df)
+    chg = category_monthly_change(df)
+    top_cat = cat.iloc[0]
+    top_wk = wk.loc[wk["합계"].idxmax()]
+    save = savings_estimate(df, str(top_cat.category), 30)
+
+    out = [
+        f"가장 많이 쓰는 카테고리는 {top_cat.category}로 전체의 {top_cat.비중}%입니다.",
+        f"{top_wk.요일}요일에 가장 많이({top_wk.합계:,.0f}원) 씁니다.",
+    ]
+    if not chg.empty:
+        drv = chg.iloc[0]
+        if drv.증감액 > 0:
+            out.append(f"최근 달에는 {drv.category} 지출이 전월보다 {drv.증감액:,.0f}원 늘었습니다.")
+    out.append(
+        f"{top_cat.category}를 30% 줄이면 월 {save['월절약액']:,.0f}원, "
+        f"연 {save['연절약액']:,.0f}원 절약할 수 있어요."
+    )
+    return out
