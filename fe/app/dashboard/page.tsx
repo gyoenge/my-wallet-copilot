@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import Chat from "@/components/Chat";
 import Dashboard from "@/components/Dashboard";
+import Debate from "@/components/Debate";
 import { getDashboard, getHealth } from "@/lib/api";
 import type { Dashboard as DashboardData } from "@/lib/types";
 
@@ -17,7 +18,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [hasKey, setHasKey] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"analysis" | "chat">("analysis");
+  const [tab, setTab] = useState<"analysis" | "debate" | "chat">("analysis");
 
   useEffect(() => {
     const sid = localStorage.getItem(SESSION_KEY);
@@ -74,7 +75,13 @@ export default function DashboardPage() {
 
       {/* 탭 전환 */}
       <div className="mb-6 inline-flex gap-1 rounded-[15px] border border-[#e7e9f1] bg-white p-[5px] shadow-[0_1px_2px_rgba(20,20,50,0.04)]">
-        {(["analysis", "chat"] as const).map((t) => (
+        {(
+          [
+            ["analysis", "📊 분석 결과"],
+            ["debate", "🧠 토론 모드"],
+            ["chat", "💬 세이비와 채팅"],
+          ] as const
+        ).map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -84,7 +91,7 @@ export default function DashboardPage() {
                 : "text-[#8a92a6] hover:text-[#1c1f2b]"
             }`}
           >
-            {t === "analysis" ? "📊 분석 결과" : "💬 세이비와 채팅"}
+            {label}
           </button>
         ))}
       </div>
@@ -93,6 +100,13 @@ export default function DashboardPage() {
       {tab === "analysis" ? (
         <div style={{ animation: "wcFade 0.35s ease both" }}>
           <Dashboard data={data} />
+        </div>
+      ) : tab === "debate" ? (
+        <div
+          className="mx-auto max-w-[860px]"
+          style={{ height: "calc(100vh - 230px)", animation: "wcFade 0.35s ease both" }}
+        >
+          <Debate sessionId={hasKey ? sessionId : null} />
         </div>
       ) : (
         <div

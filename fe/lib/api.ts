@@ -166,6 +166,73 @@ export async function streamFinalize(
   return result;
 }
 
+export interface DebateFact {
+  id: string;
+  text: string;
+}
+export interface DebateTurn {
+  persona: string;
+  name: string;
+  text: string;
+}
+export interface DebateVerdict {
+  consensus: string;
+  tension: string;
+  conclusion: string;
+  actions: string[];
+  confidence: number;
+}
+
+/**
+ * POST /api/debate 의 SSE를 읽어 페르소나 토론을 단계별로 콜백한다.
+ * facts(팩트시트) → turn(페르소나 발언 N회) → verdict(조정자 결론).
+ */
+export async function streamDebate(
+  sessionId: string,
+  question: string | null,
+  cb: {
+    onFacts: (facts: DebateFact[]) => void;
+    onTurn: (turn: DebateTurn) => void;
+    onVerdict: (verdict: DebateVerdict) => void;
+    onError?: (msg: string) => void;
+  },
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/debate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, message: question }),
+    });
+  } catch {
+    cb.onError?.("백엔드에 연결할 수 없습니다. FastAPI(127.0.0.1:8000)가 실행 중인지 확인하세요.");
+    return;
+  }
+  if (!res.ok || !res.body) {
+    cb.onError?.((await res.json().catch(() => ({})))?.detail ?? "토론 요청 실패");
+    return;
+  }
+
+  await readSSE(
+    res,
+    (event, data) => {
+      try {
+        if (event === "facts") cb.onFacts((JSON.parse(data) as { facts: DebateFact[] }).facts);
+        else if (event === "turn") cb.onTurn(JSON.parse(data) as DebateTurn);
+        else if (event === "verdict") cb.onVerdict(JSON.parse(data) as DebateVerdict);
+        else if (event === "error") {
+          cb.onError?.(data);
+          return true;
+        } else if (event === "done") return true;
+      } catch {
+        cb.onError?.("토론 데이터를 읽지 못했습니다.");
+        return true;
+      }
+    },
+    cb.onError,
+  );
+}
+
 /**
  * POST /api/chat 의 SSE 스트림을 읽어 토큰 단위로 콜백한다.
  * EventSource는 GET만 지원하므로 fetch + ReadableStream으로 직접 파싱한다.

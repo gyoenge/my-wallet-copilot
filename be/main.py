@@ -288,6 +288,39 @@ async def dashboard(session_id: str) -> dict:
     return _dashboard_payload(df)
 
 
+class DebateRequest(BaseModel):
+    session_id: str
+    message: str | None = None
+
+
+@app.post("/api/debate")
+async def debate(req: DebateRequest):
+    """페르소나 토론(인사이드 아웃 모드)을 SSE로 흘린다.
+
+    facts(팩트시트) → turn(페르소나 발언, N회) → verdict(조정자 결론) 순.
+    """
+    session = _get_session(req.session_id)
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY가 설정되지 않았습니다.")
+
+    from ai.debate import run_debate
+
+    question = (req.message or "").strip() or (
+        "내 소비를 진단하고, 절약과 삶의 질 사이에서 어떻게 균형을 잡을지 토론해줘."
+    )
+
+    async def gen():
+        try:
+            async for kind, payload in run_debate(session["df"], question):
+                yield {"event": kind, "data": json.dumps(payload, ensure_ascii=False)}
+        except Exception as e:  # noqa: BLE001
+            yield {"event": "error", "data": str(e)}
+        finally:
+            yield {"event": "done", "data": ""}
+
+    return EventSourceResponse(gen())
+
+
 class ChatRequest(BaseModel):
     session_id: str
     message: str
@@ -302,7 +335,7 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY가 설정되지 않았습니다.")
 
     if session["agent"] is None:
-        from ai.agent.single import build_agent
+        from ai.chat.single import build_agent
 
         session["agent"] = build_agent(session["df"])
     agent = session["agent"]
