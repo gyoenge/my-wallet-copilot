@@ -249,6 +249,23 @@ export async function streamDebate(
   );
 }
 
+export interface PrefQuestion {
+  id: string;
+  question: string;
+  options: string[];
+}
+
+/** POST /api/preferences — 소비 패턴 기반 맞춤 선호 질문을 받아온다. */
+export async function getPreferenceQuestions(sessionId: string): Promise<PrefQuestion[]> {
+  const res = await fetch(`${API_BASE}/api/preferences`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.detail ?? "질문 생성 실패");
+  return (await res.json()).questions;
+}
+
 export interface SimStrategy {
   title: string;
   category: string;

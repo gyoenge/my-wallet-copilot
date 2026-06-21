@@ -391,6 +391,23 @@ async def debate(req: DebateRequest):
     return EventSourceResponse(gen())
 
 
+class PreferenceRequest(BaseModel):
+    session_id: str
+
+
+@app.post("/api/preferences")
+async def preferences(req: PreferenceRequest) -> dict:
+    """소비 패턴 기반 맞춤 선호 질문을 생성해 돌려준다."""
+    session = _get_session(req.session_id)
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY가 설정되지 않았습니다.")
+
+    from ai.preference import generate_questions
+
+    qs = await asyncio.to_thread(generate_questions, session["df"])
+    return {"questions": qs}
+
+
 class SimulateRequest(BaseModel):
     session_id: str
     preferences: str | None = None
