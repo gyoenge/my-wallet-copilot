@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Chat from "@/components/Chat";
 import Dashboard from "@/components/Dashboard";
 import Debate from "@/components/Debate";
+import Simulation from "@/components/Simulation";
 import { getDashboard, getHealth } from "@/lib/api";
 import type { Dashboard as DashboardData } from "@/lib/types";
 
@@ -18,7 +19,9 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [hasKey, setHasKey] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"analysis" | "debate" | "chat">("analysis");
+  const [tab, setTab] = useState<"analysis" | "debate" | "simulation" | "chat">(
+    "analysis",
+  );
 
   useEffect(() => {
     const sid = localStorage.getItem(SESSION_KEY);
@@ -88,6 +91,7 @@ export default function DashboardPage() {
           [
             ["analysis", "📊 분석 결과"],
             ["debate", "🧠 토론 모드"],
+            ["simulation", "🧪 시뮬레이션 모드"],
             ["chat", "💬 세이비와 채팅"],
           ] as const
         ).map(([t, label]) => (
@@ -116,6 +120,13 @@ export default function DashboardPage() {
           style={{ height: "calc(100vh - 230px)", animation: "wcFade 0.35s ease both" }}
         >
           <Debate sessionId={hasKey ? sessionId : null} onGoalSet={refreshDashboard} />
+        </div>
+      ) : tab === "simulation" ? (
+        <div
+          className="mx-auto max-w-[860px]"
+          style={{ height: "calc(100vh - 230px)", animation: "wcFade 0.35s ease both" }}
+        >
+          <Simulation sessionId={hasKey ? sessionId : null} />
         </div>
       ) : (
         <div

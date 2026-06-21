@@ -391,6 +391,35 @@ async def debate(req: DebateRequest):
     return EventSourceResponse(gen())
 
 
+class SimulateRequest(BaseModel):
+    session_id: str
+    preferences: str | None = None
+
+
+@app.post("/api/simulate")
+async def simulate(req: SimulateRequest):
+    """절약 전략 시뮬레이션을 SSE로 흘린다.
+
+    candidates(후보 전략) → eval(전략별 평가 N회) → recommendation(최적 전략).
+    """
+    session = _get_session(req.session_id)
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY가 설정되지 않았습니다.")
+
+    from ai.simulate import run_simulation
+
+    async def gen():
+        try:
+            async for kind, payload in run_simulation(session["df"], req.preferences or ""):
+                yield {"event": kind, "data": json.dumps(payload, ensure_ascii=False)}
+        except Exception as e:  # noqa: BLE001
+            yield {"event": "error", "data": str(e)}
+        finally:
+            yield {"event": "done", "data": ""}
+
+    return EventSourceResponse(gen())
+
+
 class ChatRequest(BaseModel):
     session_id: str
     message: str

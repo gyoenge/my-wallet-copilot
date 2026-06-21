@@ -249,6 +249,83 @@ export async function streamDebate(
   );
 }
 
+export interface SimStrategy {
+  title: string;
+  category: string;
+  reduction_pct: number;
+  description: string;
+  monthly_saving: number;
+}
+export interface SimEval {
+  index: number;
+  title: string;
+  category: string;
+  monthly_saving: number;
+  saving_score: number;
+  satisfaction: number;
+  feasibility: number;
+  efficiency: number;
+  reason: string;
+}
+export interface SimRecommendation {
+  winner_index: number;
+  title: string;
+  efficiency: number;
+  rationale: string;
+}
+
+/**
+ * POST /api/simulate 의 SSE를 읽어 절약 전략 시뮬레이션을 단계별로 콜백한다.
+ * candidates(후보 전략) → eval(전략별 평가 N회) → recommendation(최적 전략).
+ */
+export async function streamSimulate(
+  sessionId: string,
+  preferences: string | null,
+  cb: {
+    onCandidates: (strategies: SimStrategy[]) => void;
+    onEval: (row: SimEval) => void;
+    onRecommendation: (rec: SimRecommendation) => void;
+    onError?: (msg: string) => void;
+  },
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/simulate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, preferences }),
+    });
+  } catch {
+    cb.onError?.("백엔드에 연결할 수 없습니다. FastAPI(127.0.0.1:8000)가 실행 중인지 확인하세요.");
+    return;
+  }
+  if (!res.ok || !res.body) {
+    cb.onError?.((await res.json().catch(() => ({})))?.detail ?? "시뮬레이션 요청 실패");
+    return;
+  }
+
+  await readSSE(
+    res,
+    (event, data) => {
+      try {
+        if (event === "candidates")
+          cb.onCandidates((JSON.parse(data) as { strategies: SimStrategy[] }).strategies);
+        else if (event === "eval") cb.onEval(JSON.parse(data) as SimEval);
+        else if (event === "recommendation")
+          cb.onRecommendation(JSON.parse(data) as SimRecommendation);
+        else if (event === "error") {
+          cb.onError?.(data);
+          return true;
+        } else if (event === "done") return true;
+      } catch {
+        cb.onError?.("시뮬레이션 데이터를 읽지 못했습니다.");
+        return true;
+      }
+    },
+    cb.onError,
+  );
+}
+
 /**
  * POST /api/chat 의 SSE 스트림을 읽어 토큰 단위로 콜백한다.
  * EventSource는 GET만 지원하므로 fetch + ReadableStream으로 직접 파싱한다.
