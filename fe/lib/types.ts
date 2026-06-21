@@ -53,6 +53,21 @@ export type DashCard =
         categories: string[];
         examples: string[];
       }[];
+    }
+  | {
+      kind: "goal";
+      title: string;
+      category: string;
+      note: string;
+      target: number;
+      baseline: number;
+      actual: number;
+      lastMonth: string;
+      progress: number;
+      achieved: boolean;
+      gap: number;
+      forecast: number;
+      onTrack: boolean;
     };
 
 export interface Dashboard {

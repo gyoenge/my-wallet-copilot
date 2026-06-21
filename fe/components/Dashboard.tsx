@@ -137,6 +137,70 @@ function DynamicCard({ card }: { card: DashboardData["cards"][number] }) {
       </Panel>
     );
   }
+  if (card.kind === "goal") {
+    const pct = Math.round(card.progress * 100);
+    return (
+      <Panel title={card.title}>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-[15px] font-bold text-[#1c1f2b]">
+              {card.category} 월 {card.target.toLocaleString()}원 이하
+            </div>
+            <div className="text-[12px] text-[#9aa1b2]">{card.note}</div>
+          </div>
+          <span
+            className={`flex-none rounded-full px-2.5 py-1 text-[11px] font-bold ${
+              card.achieved
+                ? "bg-[#e6f7ef] text-[#1f9d63]"
+                : "bg-[#fdeaea] text-[#d14343]"
+            }`}
+          >
+            {card.achieved ? "✅ 달성" : "❌ 미달성"}
+          </span>
+        </div>
+
+        {/* 진행률 바: 기준선 → 목표 */}
+        <div className="mb-1 h-2.5 overflow-hidden rounded-full bg-[#eef0f5]">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#8b7cf6] to-[#6d5ef0]"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="mb-3 flex justify-between text-[11px] text-[#9aa1b2]">
+          <span>기준선 {card.baseline.toLocaleString()}원</span>
+          <span>진행률 {pct}%</span>
+          <span>목표 {card.target.toLocaleString()}원</span>
+        </div>
+
+        <div className="flex items-center justify-between rounded-[12px] bg-[#fafbfe] px-3 py-2.5">
+          <div>
+            <div className="text-[11px] text-[#9aa1b2]">최근 달({card.lastMonth}) 실측</div>
+            <div className="text-[14px] font-bold text-[#1c1f2b]">
+              {card.actual.toLocaleString()}원
+              <span className={card.gap > 0 ? "text-[#d14343]" : "text-[#1f9d63]"}>
+                {" "}
+                ({card.gap > 0 ? "+" : ""}
+                {card.gap.toLocaleString()})
+              </span>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[11px] text-[#9aa1b2]">다음 달 예측</div>
+            <div className="text-[14px] font-bold text-[#1c1f2b]">
+              {card.forecast.toLocaleString()}원
+            </div>
+          </div>
+          <span
+            className={`flex-none rounded-full px-2.5 py-1 text-[11px] font-bold ${
+              card.onTrack ? "bg-[#e6f7ef] text-[#1f9d63]" : "bg-[#fff3e0] text-[#c2730b]"
+            }`}
+          >
+            {card.onTrack ? "🟢 순항" : "🔴 이탈 위험"}
+          </span>
+        </div>
+      </Panel>
+    );
+  }
   return (
     <Panel title={card.title}>
       <div className="flex items-start gap-3">

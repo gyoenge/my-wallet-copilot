@@ -27,6 +27,7 @@ from ai.categorize import CATEGORIES, categorize
 from ai.cluster import cluster_merchants
 from ai.critic import critique
 from ai.data_loader import load_transactions
+from ai.goals import goal_from_reduction, track_goal
 
 load_dotenv()
 
@@ -87,6 +88,29 @@ def _dynamic_cards(df: pd.DataFrame) -> list[dict]:
                 for c in clu["clusters"]
             ],
         })
+
+    # 목표 추적 — 최상위 변동비 카테고리를 30% 감축 목표로 자동 제안·추적
+    if df["year_month"].nunique() >= 2:
+        cat_order = A.category_breakdown(df)["category"].tolist()
+        target_cat = next((c for c in cat_order if c in A.DISCRETIONARY), None)
+        if target_cat:
+            goal = goal_from_reduction(df, target_cat, 30)
+            t = track_goal(df, goal)
+            cards.append({
+                "kind": "goal",
+                "title": "목표 추적",
+                "category": t["category"],
+                "note": goal.rationale,
+                "target": t["target_monthly"],
+                "baseline": t["baseline_monthly"],
+                "actual": t["actual_last_month"],
+                "lastMonth": t["last_month"],
+                "progress": t["progress"],
+                "achieved": t["achieved"],
+                "gap": t["gap"],
+                "forecast": t["forecast_next"],
+                "onTrack": t["on_track"],
+            })
 
     # 요일별 지출 (막대)
     wk = A.weekday_spending(df)
