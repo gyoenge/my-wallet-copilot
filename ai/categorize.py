@@ -65,19 +65,30 @@ _RULES: list[tuple[str, list[str]]] = [
 ]
 
 
+def match_all_rules(merchant: str) -> list[tuple[str, str]]:
+    """매칭되는 모든 (카테고리, 키워드)를 규칙 순서대로 돌려준다.
+
+    서로 다른 카테고리가 둘 이상 걸리면(예: '올리브영' + '홈플러스')
+    분류가 모호하다는 신호 — 검증가가 불확실 판단에 쓴다.
+    """
+    name = str(merchant).lower()
+    return [
+        (category, kw)
+        for category, keywords in _RULES
+        for kw in keywords
+        if kw in name
+    ]
+
+
 def match_rule(merchant: str) -> tuple[str, str | None]:
     """가맹점명을 규칙으로 분류하고 매칭 근거(키워드)를 함께 돌려준다.
 
     Returns:
         (카테고리, 매칭된 키워드). 어떤 규칙도 맞지 않으면 ('기타', None).
-        검증가(critic.py)가 분류 근거/신뢰도를 판단하는 데 쓴다.
+        위에서부터 먼저 매칭되는 규칙이 이긴다.
     """
-    name = str(merchant).lower()
-    for category, keywords in _RULES:
-        for kw in keywords:
-            if kw in name:
-                return category, kw
-    return "기타", None
+    hits = match_all_rules(merchant)
+    return hits[0] if hits else ("기타", None)
 
 
 def categorize_merchant(merchant: str) -> str:

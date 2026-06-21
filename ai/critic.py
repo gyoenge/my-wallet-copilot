@@ -18,7 +18,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from ai.categorize import CATEGORIES, match_rule
+from ai.categorize import CATEGORIES, match_all_rules
 
 # 이 값 미만이면 '불확실' 배지를 단다.
 UNCERTAIN_THRESHOLD = 0.6
@@ -41,9 +41,18 @@ class Review:
 
 def _heuristic_review(merchant: str, category: str) -> Review:
     """LLM 없이 분류 '근거'만으로 신뢰도를 매기는 결정적 검증가."""
-    rule_cat, kw = match_rule(merchant)
+    hits = match_all_rules(merchant)
+    rule_cat, kw = (hits[0] if hits else ("기타", None))
+    distinct_cats = {c for c, _ in hits}
 
     if kw is not None and rule_cat == category:
+        # 서로 다른 카테고리 규칙이 동시에 걸리면 모호 → 불확실로 끌어올린다.
+        if len(distinct_cats) > 1:
+            competitors = " vs ".join(sorted(distinct_cats))
+            return Review(
+                merchant, category, 0.55,
+                f"여러 카테고리 규칙이 동시 매칭({competitors}) — '{category}'로 우선 분류됨",
+            )
         return Review(merchant, category, 0.9, f"'{kw}' 규칙 키워드로 직접 매칭")
     if kw is not None and rule_cat != category:
         return Review(
