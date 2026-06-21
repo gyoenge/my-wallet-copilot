@@ -65,13 +65,24 @@ _RULES: list[tuple[str, list[str]]] = [
 ]
 
 
-def categorize_merchant(merchant: str) -> str:
-    """단일 가맹점명을 규칙으로 분류한다. 매칭 실패 시 '기타'."""
+def match_rule(merchant: str) -> tuple[str, str | None]:
+    """가맹점명을 규칙으로 분류하고 매칭 근거(키워드)를 함께 돌려준다.
+
+    Returns:
+        (카테고리, 매칭된 키워드). 어떤 규칙도 맞지 않으면 ('기타', None).
+        검증가(critic.py)가 분류 근거/신뢰도를 판단하는 데 쓴다.
+    """
     name = str(merchant).lower()
     for category, keywords in _RULES:
-        if any(kw in name for kw in keywords):
-            return category
-    return "기타"
+        for kw in keywords:
+            if kw in name:
+                return category, kw
+    return "기타", None
+
+
+def categorize_merchant(merchant: str) -> str:
+    """단일 가맹점명을 규칙으로 분류한다. 매칭 실패 시 '기타'."""
+    return match_rule(merchant)[0]
 
 
 def categorize(

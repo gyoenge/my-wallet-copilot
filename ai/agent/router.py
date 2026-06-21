@@ -1,4 +1,4 @@
-"""질문 라우터 (옵션 2).
+"""질문 라우터.
 
 값싼 모델(haiku)로 질문을 simple/complex 로 1회 분류한 뒤,
 - simple  → 단일 ReAct 에이전트(single.build_agent): 빠르고 저렴
