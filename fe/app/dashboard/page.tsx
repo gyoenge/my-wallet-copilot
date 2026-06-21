@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import Chat from "@/components/Chat";
 import Dashboard from "@/components/Dashboard";
-import TLogo from "@/components/TLogo";
 import { getDashboard, getHealth } from "@/lib/api";
 import type { Dashboard as DashboardData } from "@/lib/types";
 
@@ -50,24 +50,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1280px] px-8 pb-14 pt-7" style={{ animation: "wcFade 0.5s ease both" }}>
-      {/* 헤더 */}
-      <header className="mb-[26px] flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <TLogo size={56} radius={16} />
-          <div>
-            <div className="text-[25px] font-extrabold tracking-tight text-[#1c1f2b]">My Wallet Copilot</div>
-            <div className="mt-0.5 text-[14px] text-[#8a92a6]">세이비 · 새는 돈을 찾아주는 지갑 수호자</div>
-          </div>
-        </div>
+    <div className="flex min-h-screen flex-col" style={{ animation: "wcFade 0.5s ease both" }}>
+      {/* 상단 바 — 웰컴 페이지와 통일 (로고 + 새 분석) */}
+      <header className="flex items-center justify-between px-6 py-6 md:px-10">
+        <Link href="/" aria-label="홈으로" className="flex items-center transition hover:opacity-80">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/savy_logo.png" alt="SAVY: My Wallet Copilot" className="h-[46px] w-auto" />
+        </Link>
         <button
           onClick={() => router.push("/")}
-          className="wc-ghost rounded-xl border border-[#e2e5ee] bg-white px-5 py-[11px] text-[14px] font-semibold text-[#4b5263]"
+          className="rounded-[12px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] px-[22px] py-3 text-[16px] font-semibold text-white transition hover:opacity-90"
         >
-          내역 업로드
+          새 분석
         </button>
       </header>
 
+      <div className="mx-auto w-full max-w-[1280px] px-8 pb-14">
       {!hasKey && (
         <div className="mb-[22px] rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-[14px] text-amber-200">
           ANTHROPIC_API_KEY가 설정되지 않아 챗봇이 비활성화됩니다. 대시보드는 정상 동작합니다.
@@ -104,6 +102,7 @@ export default function DashboardPage() {
           <Chat sessionId={hasKey ? sessionId : null} />
         </div>
       )}
+      </div>
     </div>
   );
 }
