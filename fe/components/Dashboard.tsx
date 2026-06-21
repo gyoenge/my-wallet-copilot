@@ -99,6 +99,44 @@ function DynamicCard({ card }: { card: DashboardData["cards"][number] }) {
       </Panel>
     );
   }
+  if (card.kind === "clusters") {
+    return (
+      <Panel title={card.title}>
+        <div className="mb-2 text-[12px] text-[#9aa1b2]">{card.subtitle}</div>
+        <div className="flex flex-col gap-2.5">
+          {card.clusters.map((c, i) => (
+            <div key={i} className="rounded-[12px] border border-[#eef0f5] bg-[#fafbfe] p-3">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="truncate text-[14px] font-bold text-[#1c1f2b]">{c.label}</span>
+                <span className="flex-none rounded-full bg-[#efeaff] px-2 py-0.5 text-[11px] font-bold text-[#7c5cf6]">
+                  지출 {c.share}%
+                </span>
+              </div>
+              <div className="mb-1.5 flex flex-wrap gap-1">
+                {[
+                  `가맹점 ${c.size}곳`,
+                  `평균 ${c.avg.toLocaleString()}원`,
+                  `방문 ${c.freq}회`,
+                  ...(c.night >= 0.4 ? ["심야형"] : []),
+                  ...(c.weekend >= 0.5 ? ["주말형"] : []),
+                ].map((chip, j) => (
+                  <span
+                    key={j}
+                    className="rounded-[8px] bg-white px-2 py-0.5 text-[11px] text-[#6b7280] ring-1 ring-[#eceef4]"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+              <div className="truncate text-[11.5px] text-[#9aa1b2]">
+                {c.categories.join(" · ")} — {c.examples.slice(0, 2).join(", ")}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    );
+  }
   return (
     <Panel title={card.title}>
       <div className="flex items-start gap-3">

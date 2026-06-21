@@ -37,7 +37,23 @@ export type DashCard =
       title: string;
       items: { name: string; sub: string; value: string }[];
     }
-  | { kind: "savings"; title: string; text: string };
+  | { kind: "savings"; title: string; text: string }
+  | {
+      kind: "clusters";
+      title: string;
+      subtitle: string;
+      clusters: {
+        label: string;
+        size: number;
+        share: number;
+        freq: number;
+        avg: number;
+        weekend: number;
+        night: number;
+        categories: string[];
+        examples: string[];
+      }[];
+    };
 
 export interface Dashboard {
   summary: Summary;

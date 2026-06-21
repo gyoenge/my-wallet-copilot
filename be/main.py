@@ -24,6 +24,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from ai import analysis as A
 from ai.categorize import CATEGORIES, categorize
+from ai.cluster import cluster_merchants
 from ai.critic import critique
 from ai.data_loader import load_transactions
 
@@ -63,6 +64,29 @@ def _dynamic_cards(df: pd.DataFrame) -> list[dict]:
     데이터 상황에 맞춰 카드로 추가한다. 프론트엔드는 이 배열을 순회해 렌더한다.
     """
     cards: list[dict] = []
+
+    # 소비 유형 자동 군집 (행동 패턴 기반, 카테고리 비의존)
+    clu = cluster_merchants(df)
+    if clu["clusters"]:
+        cards.append({
+            "kind": "clusters",
+            "title": "내 소비 유형",
+            "subtitle": f"행동 패턴으로 자동 발굴한 {clu['k']}개 유형",
+            "clusters": [
+                {
+                    "label": c["label"],
+                    "size": c["size"],
+                    "share": c["지출비중"],
+                    "freq": c["평균빈도"],
+                    "avg": c["평균단가"],
+                    "weekend": c["주말비율"],
+                    "night": c["심야비율"],
+                    "categories": c["주요카테고리"],
+                    "examples": c["예시가맹점"],
+                }
+                for c in clu["clusters"]
+            ],
+        })
 
     # 요일별 지출 (막대)
     wk = A.weekday_spending(df)

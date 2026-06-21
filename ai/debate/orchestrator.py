@@ -92,6 +92,18 @@ def build_fact_sheet(df: pd.DataFrame) -> dict:
 
     h = A.health_score(df)
     facts.append({"id": "H01", "text": f"소비 건강 점수 {h['score']}점 ({h['label']})"})
+
+    # 자동 발굴한 소비 유형(군집)도 근거로 제공 — 페르소나가 '집콕형' 등을 인용 가능.
+    from ai.cluster import cluster_merchants
+
+    for i, c in enumerate(cluster_merchants(df)["clusters"], start=1):
+        facts.append({
+            "id": f"G{i:02d}",
+            "text": (
+                f"소비유형 '{c['label']}': 가맹점 {c['size']}곳, 지출비중 {c['지출비중']}% "
+                f"(평균단가 {c['평균단가']:,}원, 예: {', '.join(c['예시가맹점'][:2])})"
+            ),
+        })
     return {"facts": facts}
 
 
