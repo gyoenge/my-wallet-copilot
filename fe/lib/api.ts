@@ -182,6 +182,20 @@ export interface DebateVerdict {
   actions: string[];
   confidence: number;
 }
+export interface DebateGoal {
+  category: string;
+  note: string;
+  source: string;
+  target: number;
+  baseline: number;
+  actual: number;
+  lastMonth: string;
+  progress: number;
+  achieved: boolean;
+  gap: number;
+  forecast: number;
+  onTrack: boolean;
+}
 
 /**
  * POST /api/debate 의 SSE를 읽어 페르소나 토론을 단계별로 콜백한다.
@@ -194,6 +208,7 @@ export async function streamDebate(
     onFacts: (facts: DebateFact[]) => void;
     onTurn: (turn: DebateTurn) => void;
     onVerdict: (verdict: DebateVerdict) => void;
+    onGoal?: (goal: DebateGoal) => void;
     onError?: (msg: string) => void;
   },
 ): Promise<void> {
@@ -220,6 +235,7 @@ export async function streamDebate(
         if (event === "facts") cb.onFacts((JSON.parse(data) as { facts: DebateFact[] }).facts);
         else if (event === "turn") cb.onTurn(JSON.parse(data) as DebateTurn);
         else if (event === "verdict") cb.onVerdict(JSON.parse(data) as DebateVerdict);
+        else if (event === "goal") cb.onGoal?.(JSON.parse(data) as DebateGoal);
         else if (event === "error") {
           cb.onError?.(data);
           return true;

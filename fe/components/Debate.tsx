@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   streamDebate,
   type DebateFact,
+  type DebateGoal,
   type DebateTurn,
   type DebateVerdict,
 } from "@/lib/api";
@@ -22,6 +23,7 @@ export default function Debate({ sessionId }: { sessionId: string | null }) {
   const [facts, setFacts] = useState<DebateFact[]>([]);
   const [turns, setTurns] = useState<DebateTurn[]>([]);
   const [verdict, setVerdict] = useState<DebateVerdict | null>(null);
+  const [goal, setGoal] = useState<DebateGoal | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function start() {
@@ -31,10 +33,12 @@ export default function Debate({ sessionId }: { sessionId: string | null }) {
     setFacts([]);
     setTurns([]);
     setVerdict(null);
+    setGoal(null);
     await streamDebate(sessionId, question.trim() || null, {
       onFacts: (f) => setFacts(f),
       onTurn: (t) => setTurns((prev) => [...prev, t]),
       onVerdict: (v) => setVerdict(v),
+      onGoal: (g) => setGoal(g),
       onError: (msg) => setError(msg),
     });
     setBusy(false);
@@ -152,6 +156,42 @@ export default function Debate({ sessionId }: { sessionId: string | null }) {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {/* 토론 결론에서 추출한 추적 목표 */}
+        {goal && (
+          <div
+            className="rounded-[16px] border border-[#cdeede] bg-[#f1faf5] p-4"
+            style={{ animation: "wcFade 0.35s ease both" }}
+          >
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <div className="text-[13px] font-extrabold text-[#1f9d63]">
+                🎯 이 토론으로 설정된 목표
+              </div>
+              <span
+                className={`flex-none rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  goal.onTrack ? "bg-[#e6f7ef] text-[#1f9d63]" : "bg-[#fff3e0] text-[#c2730b]"
+                }`}
+              >
+                {goal.onTrack ? "🟢 순항" : "🔴 이탈 위험"}
+              </span>
+            </div>
+            <div className="text-[14.5px] font-bold text-[#1c1f2b]">
+              {goal.category} 월 {goal.target.toLocaleString()}원 이하
+            </div>
+            <div className="mb-2 text-[12px] text-[#7b8494]">{goal.note}</div>
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[12.5px] text-[#4b5263]">
+              <span>최근 달({goal.lastMonth}) {goal.actual.toLocaleString()}원</span>
+              <span className={goal.gap > 0 ? "text-[#d14343]" : "text-[#1f9d63]"}>
+                목표 대비 {goal.gap > 0 ? "+" : ""}
+                {goal.gap.toLocaleString()}원
+              </span>
+              <span>다음 달 예측 {goal.forecast.toLocaleString()}원</span>
+            </div>
+            <div className="mt-1.5 text-[11px] text-[#9aa1b2]">
+              분석 결과 탭의 ‘목표 추적’ 카드에도 반영됩니다.
+            </div>
           </div>
         )}
 

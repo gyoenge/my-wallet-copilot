@@ -27,7 +27,7 @@ from ai.categorize import CATEGORIES, categorize
 from ai.cluster import cluster_merchants
 from ai.critic import critique
 from ai.data_loader import load_transactions
-from ai.goals import goal_from_reduction, track_goal
+from ai.goals import Goal, extract_goal, goal_from_reduction, track_goal
 
 load_dotenv()
 
@@ -58,11 +58,31 @@ def _summary(df: pd.DataFrame) -> dict:
     return A.spending_summary(df)
 
 
-def _dynamic_cards(df: pd.DataFrame) -> list[dict]:
+def _goal_payload(df: pd.DataFrame, goal: Goal) -> dict:
+    """목표 추적 결과를 프론트 카드/이벤트 공통 형태로 만든다."""
+    t = track_goal(df, goal)
+    return {
+        "category": t["category"],
+        "note": goal.rationale,
+        "source": goal.source,
+        "target": t["target_monthly"],
+        "baseline": t["baseline_monthly"],
+        "actual": t["actual_last_month"],
+        "lastMonth": t["last_month"],
+        "progress": t["progress"],
+        "achieved": t["achieved"],
+        "gap": t["gap"],
+        "forecast": t["forecast_next"],
+        "onTrack": t["on_track"],
+    }
+
+
+def _dynamic_cards(df: pd.DataFrame, goal: Goal | None = None) -> list[dict]:
     """입력 데이터에 따라 가변적으로 노출할 분석 카드 목록을 만든다.
 
     고정 섹션(진단/월평균/카테고리/월별추이)을 제외한 나머지 분석을
     데이터 상황에 맞춰 카드로 추가한다. 프론트엔드는 이 배열을 순회해 렌더한다.
+    goal이 주어지면(예: 토론에서 추출) 그 목표를, 없으면 자동 제안 목표를 추적한다.
     """
     cards: list[dict] = []
 
@@ -89,28 +109,14 @@ def _dynamic_cards(df: pd.DataFrame) -> list[dict]:
             ],
         })
 
-    # 목표 추적 — 최상위 변동비 카테고리를 30% 감축 목표로 자동 제안·추적
-    if df["year_month"].nunique() >= 2:
+    # 목표 추적 — 세션 목표(토론에서 추출 등)가 있으면 그것, 없으면 자동 제안.
+    if goal is None and df["year_month"].nunique() >= 2:
         cat_order = A.category_breakdown(df)["category"].tolist()
         target_cat = next((c for c in cat_order if c in A.DISCRETIONARY), None)
         if target_cat:
             goal = goal_from_reduction(df, target_cat, 30)
-            t = track_goal(df, goal)
-            cards.append({
-                "kind": "goal",
-                "title": "목표 추적",
-                "category": t["category"],
-                "note": goal.rationale,
-                "target": t["target_monthly"],
-                "baseline": t["baseline_monthly"],
-                "actual": t["actual_last_month"],
-                "lastMonth": t["last_month"],
-                "progress": t["progress"],
-                "achieved": t["achieved"],
-                "gap": t["gap"],
-                "forecast": t["forecast_next"],
-                "onTrack": t["on_track"],
-            })
+    if goal is not None:
+        cards.append({"kind": "goal", "title": "목표 추적", **_goal_payload(df, goal)})
 
     # 요일별 지출 (막대)
     wk = A.weekday_spending(df)
@@ -174,7 +180,7 @@ def _dynamic_cards(df: pd.DataFrame) -> list[dict]:
     return cards
 
 
-def _dashboard_payload(df: pd.DataFrame) -> dict:
+def _dashboard_payload(df: pd.DataFrame, goal: Goal | None = None) -> dict:
     """대시보드가 필요로 하는 분석 결과를 묶는다.
 
     고정 섹션 + 데이터에 따라 가변적으로 추가되는 cards 배열을 함께 내려준다.
@@ -185,7 +191,7 @@ def _dashboard_payload(df: pd.DataFrame) -> dict:
         "insights": A.key_insights(df),
         "categories": _records(A.category_breakdown(df)),
         "monthly": _records(A.monthly_trend(df)),
-        "cards": _dynamic_cards(df),
+        "cards": _dynamic_cards(df, goal),
     }
 
 
@@ -332,8 +338,8 @@ async def finalize(req: FinalizeRequest):
 
 @app.get("/api/dashboard/{session_id}")
 async def dashboard(session_id: str) -> dict:
-    df = _get_session(session_id)["df"]
-    return _dashboard_payload(df)
+    session = _get_session(session_id)
+    return _dashboard_payload(session["df"], session.get("goal"))
 
 
 class DebateRequest(BaseModel):
@@ -361,6 +367,22 @@ async def debate(req: DebateRequest):
         try:
             async for kind, payload in run_debate(session["df"], question):
                 yield {"event": kind, "data": json.dumps(payload, ensure_ascii=False)}
+                # 토론 결론 → 추적 가능한 목표로 구조화해 세션에 저장하고 내려준다.
+                if kind == "verdict":
+                    text = (
+                        payload.get("conclusion", "")
+                        + "\n"
+                        + " ".join(payload.get("actions", []))
+                    )
+                    goal = await asyncio.to_thread(extract_goal, text, session["df"])
+                    if goal is not None:
+                        session["goal"] = goal
+                        yield {
+                            "event": "goal",
+                            "data": json.dumps(
+                                _goal_payload(session["df"], goal), ensure_ascii=False
+                            ),
+                        }
         except Exception as e:  # noqa: BLE001
             yield {"event": "error", "data": str(e)}
         finally:
