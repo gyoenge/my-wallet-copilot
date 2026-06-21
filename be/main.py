@@ -24,6 +24,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from ai import analysis as A
 from ai.categorize import CATEGORIES, categorize
+from ai.critic import critique
 from ai.data_loader import load_transactions
 
 load_dotenv()
@@ -213,29 +214,37 @@ async def analyze(file: UploadFile | None = File(default=None)):
             df = categorize(df, use_llm=use_llm)
             await asyncio.sleep(1.0)
 
+            # 검증가(critic)가 분류 신뢰도를 매겨, 의심스러운 항목을 우선 검수하게 한다.
+            yield {"event": "step", "data": "분류 신뢰도 검증 중"}
+            use_critic = os.getenv("WALLET_COPILOT_LLM_CRITIC", "false").lower() == "true"
+            reviews = critique(df, use_llm=use_critic)
+            await asyncio.sleep(0.8)
+
             # 세션을 먼저 만들고, 분류 결과를 사용자가 검토(HITL)하도록 review 이벤트로 넘긴다.
             session_id = str(uuid.uuid4())
             SESSIONS[session_id] = {"df": df, "agent": None}
-            g = (
-                df.groupby("merchant")
-                .agg(
-                    category=("category", "first"),
-                    amount=("amount", "sum"),
-                    last_date=("date", "max"),
-                )
-                .reset_index()
-                .sort_values("amount", ascending=False)
-            )
+            last_date = df.groupby("merchant")["date"].max()
+            # reviews 는 신뢰도 오름차순·지출 내림차순으로 정렬돼 있다(검수 우선순위 그대로).
             merchants = [
                 {
                     "merchant": str(r.merchant),
                     "category": str(r.category),
-                    "amount": float(r.amount),
-                    "date": r.last_date.strftime("%Y-%m-%d"),
+                    "suggested": None if pd.isna(r.suggested) else str(r.suggested),
+                    "amount": float(r.total_amount),
+                    "count": int(r.count),
+                    "date": last_date[r.merchant].strftime("%Y-%m-%d"),
+                    "confidence": float(r.confidence),
+                    "uncertain": bool(r.uncertain),
+                    "reason": str(r.reason),
                 }
-                for r in g.itertuples()
+                for r in reviews.itertuples()
             ]
-            payload = {"session_id": session_id, "categories": CATEGORIES, "merchants": merchants}
+            payload = {
+                "session_id": session_id,
+                "categories": CATEGORIES,
+                "merchants": merchants,
+                "uncertain_count": int(reviews["uncertain"].sum()),
+            }
             yield {"event": "review", "data": json.dumps(payload, ensure_ascii=False)}
         except Exception as e:  # noqa: BLE001
             yield {"event": "error", "data": f"파일을 분석할 수 없습니다: {e}"}
@@ -293,7 +302,7 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY가 설정되지 않았습니다.")
 
     if session["agent"] is None:
-        from ai.agent import build_agent
+        from ai.agent.single import build_agent
 
         session["agent"] = build_agent(session["df"])
     agent = session["agent"]
