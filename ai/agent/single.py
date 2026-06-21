@@ -8,16 +8,13 @@ Claude(claude-opus-4-8)에게 결정적 분석 함수들을 '도구'로 쥐어 �
 
 from __future__ import annotations
 
-import os
-
 import pandas as pd
-from langchain_anthropic import ChatAnthropic
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
 from ai import analysis as A
 
-DEFAULT_MODEL = "claude-opus-4-8"
+from . import build_llm
 
 SYSTEM_PROMPT = """\
 당신은 'My Wallet Copilot', 사용자의 카드 소비 내역을 분석하는 한국어 금융 도우미입니다.
@@ -137,8 +134,7 @@ def build_agent(df: pd.DataFrame, model: str | None = None):
     Returns:
         langgraph 그래프. `.invoke({"messages": [("user", "...")]})`로 호출.
     """
-    model = model or os.getenv("WALLET_COPILOT_MODEL", DEFAULT_MODEL)
-    llm = ChatAnthropic(model=model, max_tokens=2048)
+    llm = build_llm(model) if model else build_llm()
     return create_react_agent(llm, build_tools(df), prompt=SYSTEM_PROMPT)
 
 
