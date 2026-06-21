@@ -27,10 +27,23 @@ export async function getHealth(): Promise<{ ok: boolean; has_api_key: boolean }
   return res.json();
 }
 
+export interface ReviewMerchant {
+  merchant: string;
+  category: string;
+  suggested: string | null; // 검증가가 더 맞다고 본 대안 카테고리
+  amount: number;
+  count: number;
+  date: string;
+  confidence: number; // 0~1, 분류를 믿을 수 있는 정도
+  uncertain: boolean; // 검증가가 '불확실'로 표시
+  reason: string; // 신뢰도 판단 근거
+}
+
 export interface ReviewData {
   session_id: string;
   categories: string[];
-  merchants: { merchant: string; category: string; amount: number; date: string }[];
+  merchants: ReviewMerchant[];
+  uncertain_count: number;
 }
 
 // 한 줄씩 오는 SSE 텍스트를 (event, data)로 파싱해 콜백한다. (CRLF 안전)

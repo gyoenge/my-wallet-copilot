@@ -4,7 +4,12 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { streamAnalyze, streamFinalize, type ReviewData } from "@/lib/api";
+import {
+  streamAnalyze,
+  streamFinalize,
+  type ReviewData,
+  type ReviewMerchant,
+} from "@/lib/api";
 
 const SESSION_KEY = "wallet_session_id";
 
@@ -26,11 +31,29 @@ export default function Welcome() {
   const [review, setReview] = useState<ReviewData | null>(null);
   const [edited, setEdited] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<"amount" | "date" | "category">("amount");
+  // 검증가가 '불확실'로 표시한(신뢰도 임계값 미달) 항목만 골라 보여줄지 여부.
+  const [onlyUncertain, setOnlyUncertain] = useState(true);
   const changedCount = review
     ? review.merchants.filter(
         (m) => edited[m.merchant] !== undefined && edited[m.merchant] !== m.category,
       ).length
     : 0;
+
+  function sortMerchants(a: ReviewMerchant, b: ReviewMerchant): number {
+    return sort === "date"
+      ? b.date.localeCompare(a.date) || b.amount - a.amount
+      : sort === "category"
+        ? a.category.localeCompare(b.category) || b.amount - a.amount
+        : b.amount - a.amount;
+  }
+
+  // 불확실만 보기면 임계값을 넘은 항목만 선별, 아니면 전체. 그 뒤 정렬.
+  const visibleMerchants = review
+    ? (onlyUncertain
+        ? review.merchants.filter((m) => m.uncertain)
+        : [...review.merchants]
+      ).sort(sortMerchants)
+    : [];
 
   async function start(fileToAnalyze: File | null) {
     setError(null);
@@ -108,11 +131,34 @@ export default function Welcome() {
               <img src="/savy_character.png" alt="세이비" className="h-12 w-12 rounded-full object-cover" />
               <div>
                 <div className="text-[19px] font-extrabold text-[#1c1f2b]">카테고리 분류를 확인해 주세요</div>
-                <div className="text-[14px] text-[#8a92a6]">잘못 분류된 가맹점이 있으면 카테고리를 바꿔주세요.</div>
+                <div className="text-[14px] text-[#8a92a6]">
+                  {review.uncertain_count > 0
+                    ? `신뢰도가 낮은 ${review.uncertain_count}건을 먼저 확인해 주세요.`
+                    : "잘못 분류된 가맹점이 있으면 카테고리를 바꿔주세요."}
+                </div>
               </div>
             </div>
-            {/* 정렬 토글 */}
-            <div className="flex gap-1.5">
+            {/* 검수 대상 필터 + 정렬 */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(
+                [
+                  [true, `불확실만 (${review.uncertain_count})`],
+                  [false, `전체 (${review.merchants.length})`],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={String(v)}
+                  onClick={() => setOnlyUncertain(v)}
+                  className={`rounded-[10px] px-3.5 py-1.5 text-[13px] font-semibold transition ${
+                    onlyUncertain === v
+                      ? "bg-[#fdebd0] text-[#c2730b]"
+                      : "text-[#8a92a6] hover:bg-[#f3f4f8]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+              <span className="mx-1 h-4 w-px bg-[#e6e8ef]" />
               {(
                 [
                   ["amount", "금액순"],
@@ -132,25 +178,30 @@ export default function Welcome() {
               ))}
             </div>
             <div className="max-h-[52vh] overflow-y-auto rounded-[18px] border border-[#ebedf3] bg-white">
-              {[...review.merchants]
-                .sort((a, b) =>
-                  sort === "date"
-                    ? b.date.localeCompare(a.date) || b.amount - a.amount
-                    : sort === "category"
-                      ? a.category.localeCompare(b.category) || b.amount - a.amount
-                      : b.amount - a.amount,
-                )
-                .map((m) => {
+              {visibleMerchants.length === 0 ? (
+                <div className="px-4 py-10 text-center text-[13px] text-[#9aa1b2]">
+                  신뢰도가 낮은 항목이 없어요. 이대로 분석하셔도 좋아요.
+                </div>
+              ) : (
+                visibleMerchants.map((m) => {
                   const changed =
                     edited[m.merchant] !== undefined && edited[m.merchant] !== m.category;
                   return (
                   <div
                     key={m.merchant}
-                    className={`flex items-center justify-between gap-3 border-b border-[#f0f1f5] px-4 py-2.5 last:border-0 ${changed ? "bg-[#f6f2ff]" : ""}`}
+                    className={`flex items-center justify-between gap-3 border-b border-[#f0f1f5] px-4 py-2.5 last:border-0 ${changed ? "bg-[#f6f2ff]" : m.uncertain ? "bg-[#fff7ed]" : ""}`}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="truncate text-[14px] text-[#1c1f2b]">{m.merchant}</span>
+                        {m.uncertain && (
+                          <span
+                            title={m.reason}
+                            className="flex-none rounded-full bg-[#fdebd0] px-2 py-0.5 text-[10px] font-bold text-[#c2730b]"
+                          >
+                            불확실
+                          </span>
+                        )}
                         {changed && (
                           <span className="flex-none rounded-full bg-[#efeaff] px-2 py-0.5 text-[10px] font-bold text-[#7c5cf6]">
                             변경
@@ -160,6 +211,21 @@ export default function Welcome() {
                       <div className="text-[11px] text-[#9aa1b2]">
                         {m.date} · {Math.round(m.amount).toLocaleString()}원
                       </div>
+                      {m.uncertain && (
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                          <span className="text-[11px] text-[#b57a2a]">{m.reason}</span>
+                          {m.suggested && (edited[m.merchant] ?? m.category) !== m.suggested && (
+                            <button
+                              onClick={() =>
+                                setEdited((prev) => ({ ...prev, [m.merchant]: m.suggested! }))
+                              }
+                              className="rounded-full border border-[#e7b97a] bg-white px-2 py-0.5 text-[10px] font-bold text-[#c2730b] hover:bg-[#fff3e2]"
+                            >
+                              추천: {m.suggested} 적용
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   <select
                     value={edited[m.merchant] ?? m.category}
@@ -176,7 +242,8 @@ export default function Welcome() {
                   </select>
                 </div>
                   );
-                })}
+                })
+              )}
             </div>
             <button
               onClick={confirmReview}
