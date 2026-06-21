@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { streamAnalyze } from "@/lib/api";
+import { streamAnalyze, streamFinalize, type ReviewData } from "@/lib/api";
 
 const SESSION_KEY = "wallet_session_id";
 
@@ -22,21 +22,55 @@ export default function Welcome() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [steps, setSteps] = useState<string[]>([]);
+  // 카테고리 검토(HITL) 상태
+  const [review, setReview] = useState<ReviewData | null>(null);
+  const [edited, setEdited] = useState<Record<string, string>>({});
+  const [sort, setSort] = useState<"amount" | "date" | "category">("amount");
+  const changedCount = review
+    ? review.merchants.filter(
+        (m) => edited[m.merchant] !== undefined && edited[m.merchant] !== m.category,
+      ).length
+    : 0;
 
   async function start(fileToAnalyze: File | null) {
     setError(null);
     setSteps([]);
-    setLoading(true);
+    setReview(null);
+    setEdited({});
     setPanel(null);
-    const sessionId = await streamAnalyze(
+    setLoading(true);
+    await streamAnalyze(
       fileToAnalyze,
       (s) => setSteps((prev) => [...prev, s]),
-      (msg) => setError(msg),
+      (data) => {
+        setReview(data); // 분류 결과 검토 화면으로 전환
+        setLoading(false);
+      },
+      (msg) => {
+        setError(msg);
+        setLoading(false);
+      },
     );
-    if (sessionId) {
-      localStorage.setItem(SESSION_KEY, sessionId);
+  }
+
+  async function confirmReview() {
+    if (!review) return;
+    const sessionId = review.session_id;
+    setReview(null);
+    setSteps([]);
+    setLoading(true);
+    const sid = await streamFinalize(
+      sessionId,
+      edited,
+      (s) => setSteps((prev) => [...prev, s]),
+      (msg) => {
+        setError(msg);
+        setLoading(false);
+      },
+    );
+    if (sid) {
+      localStorage.setItem(SESSION_KEY, sid);
       router.push("/dashboard");
-      // 네비게이션 동안 분석 화면 유지를 위해 loading은 해제하지 않는다.
     } else {
       setLoading(false);
     }
@@ -66,7 +100,94 @@ export default function Welcome() {
         </nav>
       </header>
 
-      {loading ? (
+      {review ? (
+        <div className="flex flex-1 items-center justify-center px-8 py-8">
+          <div className="flex w-full max-w-[680px] flex-col gap-5" style={{ animation: "wcFade 0.4s ease both" }}>
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/savy_character.png" alt="세이비" className="h-12 w-12 rounded-full object-cover" />
+              <div>
+                <div className="text-[19px] font-extrabold text-[#1c1f2b]">카테고리 분류를 확인해 주세요</div>
+                <div className="text-[14px] text-[#8a92a6]">잘못 분류된 가맹점이 있으면 카테고리를 바꿔주세요.</div>
+              </div>
+            </div>
+            {/* 정렬 토글 */}
+            <div className="flex gap-1.5">
+              {(
+                [
+                  ["amount", "금액순"],
+                  ["date", "날짜순"],
+                  ["category", "유형별"],
+                ] as const
+              ).map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setSort(k)}
+                  className={`rounded-[10px] px-3.5 py-1.5 text-[13px] font-semibold transition ${
+                    sort === k ? "bg-[#efeaff] text-[#7c5cf6]" : "text-[#8a92a6] hover:bg-[#f3f4f8]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="max-h-[52vh] overflow-y-auto rounded-[18px] border border-[#ebedf3] bg-white">
+              {[...review.merchants]
+                .sort((a, b) =>
+                  sort === "date"
+                    ? b.date.localeCompare(a.date) || b.amount - a.amount
+                    : sort === "category"
+                      ? a.category.localeCompare(b.category) || b.amount - a.amount
+                      : b.amount - a.amount,
+                )
+                .map((m) => {
+                  const changed =
+                    edited[m.merchant] !== undefined && edited[m.merchant] !== m.category;
+                  return (
+                  <div
+                    key={m.merchant}
+                    className={`flex items-center justify-between gap-3 border-b border-[#f0f1f5] px-4 py-2.5 last:border-0 ${changed ? "bg-[#f6f2ff]" : ""}`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-[14px] text-[#1c1f2b]">{m.merchant}</span>
+                        {changed && (
+                          <span className="flex-none rounded-full bg-[#efeaff] px-2 py-0.5 text-[10px] font-bold text-[#7c5cf6]">
+                            변경
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-[#9aa1b2]">
+                        {m.date} · {Math.round(m.amount).toLocaleString()}원
+                      </div>
+                    </div>
+                  <select
+                    value={edited[m.merchant] ?? m.category}
+                    onChange={(e) =>
+                      setEdited((prev) => ({ ...prev, [m.merchant]: e.target.value }))
+                    }
+                    className={`flex-none rounded-[10px] border bg-[#f7f8fb] px-2.5 py-1.5 text-[13px] text-[#3c4252] outline-none focus:border-[#a78bfa] ${changed ? "border-[#a78bfa]" : "border-[#e2e5ee]"}`}
+                  >
+                    {review.categories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                  );
+                })}
+            </div>
+            <button
+              onClick={confirmReview}
+              className="wc-primary w-full rounded-[16px] bg-gradient-to-br from-[#8b7cf6] to-[#6d5ef0] p-[16px] text-[16px] font-bold text-white"
+              style={{ boxShadow: "0 10px 26px rgba(124,92,246,0.3)" }}
+            >
+              {changedCount > 0 ? `이대로 분석하기 (${changedCount}건 수정)` : "이대로 분석하기"}
+            </button>
+          </div>
+        </div>
+      ) : loading ? (
         <div className="flex flex-1 items-center justify-center px-8 pb-[10vh]">
           <div className="flex flex-col items-center gap-7" style={{ animation: "wcFade 0.4s ease both" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}

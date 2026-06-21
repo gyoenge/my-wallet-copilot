@@ -27,34 +27,21 @@ export async function getHealth(): Promise<{ ok: boolean; has_api_key: boolean }
   return res.json();
 }
 
-/**
- * POST /api/analyze 의 SSE를 읽어 분석 단계(step)를 콜백하고,
- * 완료(done) 시 session_id를 반환한다. 실패 시 null.
- */
-export async function streamAnalyze(
-  file: File | null,
-  onStep: (text: string) => void,
+export interface ReviewData {
+  session_id: string;
+  categories: string[];
+  merchants: { merchant: string; category: string; amount: number; date: string }[];
+}
+
+// 한 줄씩 오는 SSE 텍스트를 (event, data)로 파싱해 콜백한다. (CRLF 안전)
+async function readSSE(
+  res: Response,
+  on: (event: string, data: string) => boolean | void,
   onError?: (msg: string) => void,
-): Promise<string | null> {
-  const form = new FormData();
-  if (file) form.append("file", file);
-
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}/api/analyze`, { method: "POST", body: form });
-  } catch {
-    onError?.("백엔드에 연결할 수 없습니다. FastAPI(127.0.0.1:8000)가 실행 중인지 확인하세요.");
-    return null;
-  }
-  if (!res.ok || !res.body) {
-    onError?.((await res.json().catch(() => ({})))?.detail ?? "분석 요청 실패");
-    return null;
-  }
-
-  const reader = res.body.getReader();
+): Promise<void> {
+  const reader = res.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-
   try {
     while (true) {
       const { value, done } = await reader.read();
@@ -69,19 +56,101 @@ export async function streamAnalyze(
           if (line.startsWith("event:")) eventType = line.slice(6).trim();
           else if (line.startsWith("data:")) dataLines.push(line.slice(5).replace(/^ /, ""));
         }
-        const data = dataLines.join("\n");
-        if (eventType === "step") onStep(data);
-        else if (eventType === "done") return data;
-        else if (eventType === "error") {
-          onError?.(data);
-          return null;
-        }
+        if (on(eventType, dataLines.join("\n"))) return;
       }
     }
   } catch {
-    onError?.("분석 중 연결이 끊겼습니다. 다시 시도해 주세요.");
+    onError?.("연결이 끊겼습니다. 다시 시도해 주세요.");
   }
-  return null;
+}
+
+/**
+ * POST /api/analyze 의 SSE를 읽어 분석 단계(step)를 콜백하고,
+ * 분류가 끝나면 review 이벤트로 검토 데이터를 콜백한다.
+ */
+export async function streamAnalyze(
+  file: File | null,
+  onStep: (text: string) => void,
+  onReview: (data: ReviewData) => void,
+  onError?: (msg: string) => void,
+): Promise<void> {
+  const form = new FormData();
+  if (file) form.append("file", file);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/analyze`, { method: "POST", body: form });
+  } catch {
+    onError?.("백엔드에 연결할 수 없습니다. FastAPI(127.0.0.1:8000)가 실행 중인지 확인하세요.");
+    return;
+  }
+  if (!res.ok || !res.body) {
+    onError?.((await res.json().catch(() => ({})))?.detail ?? "분석 요청 실패");
+    return;
+  }
+
+  await readSSE(
+    res,
+    (event, data) => {
+      if (event === "step") onStep(data);
+      else if (event === "review") {
+        try {
+          onReview(JSON.parse(data) as ReviewData);
+        } catch {
+          onError?.("검토 데이터를 읽지 못했습니다.");
+        }
+        return true;
+      } else if (event === "error") {
+        onError?.(data);
+        return true;
+      }
+    },
+    onError,
+  );
+}
+
+/**
+ * POST /api/finalize 의 SSE를 읽어 남은 단계(step)를 콜백하고,
+ * 완료(done) 시 session_id를 반환한다. 실패 시 null.
+ */
+export async function streamFinalize(
+  sessionId: string,
+  overrides: Record<string, string>,
+  onStep: (text: string) => void,
+  onError?: (msg: string) => void,
+): Promise<string | null> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/finalize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, overrides }),
+    });
+  } catch {
+    onError?.("백엔드에 연결할 수 없습니다.");
+    return null;
+  }
+  if (!res.ok || !res.body) {
+    onError?.((await res.json().catch(() => ({})))?.detail ?? "분석 요청 실패");
+    return null;
+  }
+
+  let result: string | null = null;
+  await readSSE(
+    res,
+    (event, data) => {
+      if (event === "step") onStep(data);
+      else if (event === "done") {
+        result = data;
+        return true;
+      } else if (event === "error") {
+        onError?.(data);
+        return true;
+      }
+    },
+    onError,
+  );
+  return result;
 }
 
 /**

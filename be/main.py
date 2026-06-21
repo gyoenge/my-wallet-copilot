@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from ai import analysis as A
-from ai.categorize import categorize
+from ai.categorize import CATEGORIES, categorize
 from ai.data_loader import load_transactions
 
 load_dotenv()
@@ -211,22 +211,64 @@ async def analyze(file: UploadFile | None = File(default=None)):
 
             yield {"event": "step", "data": "소비 카테고리 분류 중"}
             df = categorize(df, use_llm=use_llm)
-            await asyncio.sleep(1.1)
+            await asyncio.sleep(1.0)
 
-            yield {"event": "step", "data": "카테고리·요일·시간대 패턴 분석 중"}
-            await asyncio.sleep(1.2)
-
-            yield {"event": "step", "data": "소비 건강 점수와 절약 포인트 계산 중"}
-            await asyncio.sleep(1.1)
-
-            yield {"event": "step", "data": "세이비의 진단 정리 중"}
-            await asyncio.sleep(0.9)
-
+            # 세션을 먼저 만들고, 분류 결과를 사용자가 검토(HITL)하도록 review 이벤트로 넘긴다.
             session_id = str(uuid.uuid4())
             SESSIONS[session_id] = {"df": df, "agent": None}
-            yield {"event": "done", "data": session_id}
+            g = (
+                df.groupby("merchant")
+                .agg(
+                    category=("category", "first"),
+                    amount=("amount", "sum"),
+                    last_date=("date", "max"),
+                )
+                .reset_index()
+                .sort_values("amount", ascending=False)
+            )
+            merchants = [
+                {
+                    "merchant": str(r.merchant),
+                    "category": str(r.category),
+                    "amount": float(r.amount),
+                    "date": r.last_date.strftime("%Y-%m-%d"),
+                }
+                for r in g.itertuples()
+            ]
+            payload = {"session_id": session_id, "categories": CATEGORIES, "merchants": merchants}
+            yield {"event": "review", "data": json.dumps(payload, ensure_ascii=False)}
         except Exception as e:  # noqa: BLE001
             yield {"event": "error", "data": f"파일을 분석할 수 없습니다: {e}"}
+
+    return EventSourceResponse(gen())
+
+
+class FinalizeRequest(BaseModel):
+    session_id: str
+    overrides: dict[str, str] = {}
+
+
+@app.post("/api/finalize")
+async def finalize(req: FinalizeRequest):
+    """카테고리 검토(HITL) 결과를 반영하고 나머지 분석 단계를 스트리밍한다."""
+    session = _get_session(req.session_id)
+    df = session["df"]
+    # 사용자가 수정한 가맹점 카테고리를 반영한다.
+    for merchant, cat in (req.overrides or {}).items():
+        if cat in CATEGORIES:
+            df.loc[df["merchant"] == merchant, "category"] = cat
+
+    async def gen():
+        try:
+            yield {"event": "step", "data": "카테고리·요일·시간대 패턴 분석 중"}
+            await asyncio.sleep(1.2)
+            yield {"event": "step", "data": "소비 건강 점수와 절약 포인트 계산 중"}
+            await asyncio.sleep(1.1)
+            yield {"event": "step", "data": "세이비의 진단 정리 중"}
+            await asyncio.sleep(0.9)
+            yield {"event": "done", "data": req.session_id}
+        except Exception as e:  # noqa: BLE001
+            yield {"event": "error", "data": str(e)}
 
     return EventSourceResponse(gen())
 
