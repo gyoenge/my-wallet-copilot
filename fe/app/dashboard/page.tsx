@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -41,6 +41,15 @@ export default function DashboardPage() {
         router.replace("/");
       });
   }, [router]);
+
+  // 토론에서 목표가 설정되면 대시보드를 다시 불러와 '목표 추적' 카드에 반영한다.
+  const refreshDashboard = useCallback(() => {
+    const sid = sessionId ?? localStorage.getItem(SESSION_KEY);
+    if (!sid) return;
+    getDashboard(sid)
+      .then(setData)
+      .catch(() => {});
+  }, [sessionId]);
 
   if (loading || !data) {
     return (
@@ -106,7 +115,7 @@ export default function DashboardPage() {
           className="mx-auto max-w-[860px]"
           style={{ height: "calc(100vh - 230px)", animation: "wcFade 0.35s ease both" }}
         >
-          <Debate sessionId={hasKey ? sessionId : null} />
+          <Debate sessionId={hasKey ? sessionId : null} onGoalSet={refreshDashboard} />
         </div>
       ) : (
         <div

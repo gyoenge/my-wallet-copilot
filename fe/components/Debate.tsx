@@ -17,7 +17,13 @@ const PERSONA_STYLE: Record<string, { ring: string; bg: string; emoji: string }>
   futurist: { ring: "#7fd6a8", bg: "#eefaf2", emoji: "🌱" },
 };
 
-export default function Debate({ sessionId }: { sessionId: string | null }) {
+export default function Debate({
+  sessionId,
+  onGoalSet,
+}: {
+  sessionId: string | null;
+  onGoalSet?: () => void;
+}) {
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [facts, setFacts] = useState<DebateFact[]>([]);
@@ -38,7 +44,10 @@ export default function Debate({ sessionId }: { sessionId: string | null }) {
       onFacts: (f) => setFacts(f),
       onTurn: (t) => setTurns((prev) => [...prev, t]),
       onVerdict: (v) => setVerdict(v),
-      onGoal: (g) => setGoal(g),
+      onGoal: (g) => {
+        setGoal(g);
+        onGoalSet?.(); // 분석 탭 '목표 추적' 카드 갱신
+      },
       onError: (msg) => setError(msg),
     });
     setBusy(false);
